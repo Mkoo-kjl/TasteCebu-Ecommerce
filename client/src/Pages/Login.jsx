@@ -103,7 +103,7 @@ export default function Login() {
                     <p className="text-center text-sm text-gray-500 mt-6">
                         New to tasteCebu?{' '}
                         <span
-                            onClick={() => navigate('/signup')}
+                            onClick={() => navigate('/Register')}
                             className="text-orange-500 font-semibold hover:underline cursor-pointer"
                         >
                             Create an Account
