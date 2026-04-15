@@ -19,11 +19,19 @@ export default function App() {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
+<<<<<<< HEAD
             <h2 className="text-4xl font-extrabold text-gray-900 mb-4">
               Welcome to TasteCebu
             </h2>
             <p className="text-xl text-gray-600 mb-8">
               Discover authentic flavors of Cebu, delivered to your door
+=======
+            <h2 className="text-4xl font-bold text-white mb-4">
+            tasteCebu
+            </h2>
+            <p className="text-xl text-gray-200 mb-8">
+              Rediscover the rich heritage of Cebuano flavors curated for the modern plate
+>>>>>>> d9ab0693ee10ad6aa34fb70bc9d2c42163ac286a
             </p>
             <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg transition duration-200">
               Shop Now
