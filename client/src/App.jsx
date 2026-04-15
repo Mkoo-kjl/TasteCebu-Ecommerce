@@ -22,9 +22,14 @@ export default function App() {
             <img src={icon} alt="TasteCebu icon" className="w-8 h-8" />
             <h1 className="text-2xl font-bold text-orange-600">TasteCebu</h1>
           </div>
-          <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
-            Login
-          </button>
+          <div className="flex items-center gap-4">
+            <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+              Login
+            </button>
+            <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+              Sign Up
+            </button>
+          </div>
         </nav>
       </header>
 
