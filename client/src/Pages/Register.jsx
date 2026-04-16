@@ -151,7 +151,7 @@ export default function Register() {
           </form>
 
           {/* Footer Link */}
-          <p className="text-center mt-8 text-gray-600 font-medium">
+          <p className="text-center mt-5 text-gray-600 font-medium">
             Already have an account?{' '}
             <span
               onClick={() => navigate('/login')}
@@ -161,7 +161,7 @@ export default function Register() {
             </span>
           </p>
            {/*FOOTER*/}
-            <div className="absolute bottom-4 left-0 w-full text-center text-gray-400 text-xs">
+            <div className="absolute bottom-1 left-0 w-full text-center text-gray-400 text-xs">
               © {new Date().getFullYear()} Made with ❤️ Team Spartan
             </div>
         </div>
