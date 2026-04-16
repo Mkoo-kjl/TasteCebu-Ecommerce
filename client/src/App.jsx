@@ -5,6 +5,9 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 import Login from './Pages/Login';
 import Register from './Pages/Register';
+import Home from './Pages/Home';
+
+const hideLayout = ['/login', '/Register', '/Home'].includes(location.pathname);
 
 const CATEGORIES = ['All', '🥭 Dried Fruits', '🍪 Biscuits', '🥜 Nuts & Snacks', '🍫 Sweets', '🐟 Dried Fish'];
 
@@ -45,8 +48,8 @@ export default function App() {
   }; // <--- Added missing closing brace for onload
 }, []);
 
-  const hideLayout =
-    location.pathname === '/login' || location.pathname === '/Register';
+  const currentPath = location.pathname.toLowerCase();
+  const hideLayout = currentPath === '/login' || currentPath === '/register' || currentPath === '/home';
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI', sans-serif" }}>
@@ -340,6 +343,10 @@ export default function App() {
 
         {/* SIGNUP */}
         <Route path="/Register" element={<Register />} />
+
+        {/* HOME */}
+        <Route path="/Home" element={<Home />} /> 
+        
 
       </Routes>
 
