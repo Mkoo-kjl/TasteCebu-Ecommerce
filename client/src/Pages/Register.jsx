@@ -160,6 +160,10 @@ export default function Register() {
               Sign In
             </span>
           </p>
+           {/*FOOTER*/}
+            <div className="absolute bottom-4 left-0 w-full text-center text-gray-400 text-xs">
+              © {new Date().getFullYear()} Made with ❤️ Team Spartan
+            </div>
         </div>
       </div>
     </div>

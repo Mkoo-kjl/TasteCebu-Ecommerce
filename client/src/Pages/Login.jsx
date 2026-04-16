@@ -30,7 +30,7 @@ export default function Login() {
                     className="w-full h-full object-cover" 
                 />
                 {/* Gradient Overlay to match brand warmth */}
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-600/40 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-r from-orange-600/40 to-transparent" />
                 
                 {/* Brand Badge on Image */}
                 <div className="absolute bottom-10 left-10 flex items-center gap-3 p-3 px-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
@@ -64,7 +64,8 @@ export default function Login() {
                                 className="w-4 h-4"
                             >
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                            </svg>  Back to Home
+                            </svg>
+                            Back to Home
                         </button>
 
                     {/* Header */}
@@ -137,6 +138,11 @@ export default function Login() {
                             Create an Account
                         </span>
                     </p>
+
+                    {/*FOOTER*/}
+                    <div className="absolute bottom-4 left-0 w-full text-center text-gray-400 text-xs">
+                        © {new Date().getFullYear()} Made with ❤️ Team Spartan
+                    </div>
                 </div>
             </div>
         </div>
