@@ -209,9 +209,6 @@ export default function App() {
                     {/* Stats */}
                     <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
                       {[
-                        { num: '50+', label: 'Products' },
-                        { num: '1K+', label: 'Orders' },
-                        { num: '4.9★', label: 'Rating' },
                       ].map((s, i) => (
                         <React.Fragment key={s.label}>
                           {i > 0 && <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.3)' }} />}
