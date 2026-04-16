@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
 
 // ─── ICON & BRAND ───────────────────────────────────────────────
-import icon from '../assets/icon.png';
+import icon from "../../assets/icon.png";
 
 // ─── HERO IMAGES ────────────────────────────────────────────────
-import heroBanner from '../assets/dried-mangoes.png';
-import heroTop    from '../assets/dried-mangoes.png';
-import heroBottom from '../assets/dried-mangoes.png';
+// CHANGED: Added an extra ../ to match the depth of the icon import
+import heroBanner from "../../assets/dried-mangoes.png";
+import heroTop    from "../../assets/bananaChips.png";
+import heroBottom from "../../assets/otap.png";
 
 // ─── CEBU'S FAVORITES ───────────────────────────────────────────
-import driedMangoes from '../assets/dried-mangoes.png';
-import bananaChips  from '../assets/dried-mangoes.png';
-import mangoJuice   from '../assets/dried-mangoes.png';
-import pastillas    from '../assets/dried-mangoes.png';
+import driedMangoes from "../../assets/dried-mangoes.png";
+import bananaChips  from "../../assets/bananaChips.png";
+import otap   from "../../assets/otap.png";
+import pastillas    from "../../assets/pastillas.png";
 
 // ─── CEBUANO CLASSICS ───────────────────────────────────────────
-import chicharonImg from '../assets/dried-mangoes.png';
-import driedSquid   from '../assets/dried-mangoes.png';
-import otapCookies  from '../assets/dried-mangoes.png';
-import pusoRice     from '../assets/dried-mangoes.png';
+import chicharon from "../../assets/chicharon.png";
+import putocheese   from "../../assets/putocheese.png";
+import piyaya  from "../../assets/piyaya.png";
+import peanutkisses     from "../../assets/peanutkisses.png";
 
 const Home = ({ user: initialUser }) => {
   const [user, setUser] = useState(initialUser);
@@ -38,11 +39,10 @@ const Home = ({ user: initialUser }) => {
   };
 
   // ── DERIVE DISPLAY VALUES (FIXED FOR FIRST_NAME) ────────────────
-  // Updated to specifically look for 'first_name' from your DB
   const firstName  = user?.first_name || 'Guest';
   const lastName   = user?.last_name  || '';
   const userName   = `${firstName} ${lastName}`.trim();
-  const userEmail  = user?.email      || '';
+  const userEmail  = user?.email       || '';
   
   const userAvatar = user?.avatar ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=ea580c&color=fff&bold=true&size=128`;
@@ -59,15 +59,15 @@ const Home = ({ user: initialUser }) => {
   const popular = [
     { name: 'Premium Dried Mangoes', price: 'P250.00', img: driedMangoes },
     { name: 'Golden Banana Chips',   price: 'P120.00', img: bananaChips  },
-    { name: 'Mango Juice',           price: 'P80.00',  img: mangoJuice   },
+    { name: 'Otap Cookies',           price: 'P80.00',  img: otap   },
     { name: 'Special Pastillas',     price: 'P100.00', img: pastillas    },
   ];
 
   const classics = [
-    { name: 'Chicharon Bulaklak', price: 'P180.00', img: chicharonImg },
-    { name: 'Dried Squid',        price: 'P150.00', img: driedSquid   },
-    { name: 'Otap Cookies',       price: 'P90.00',  img: otapCookies  },
-    { name: 'Puso Rice Pack',     price: 'P60.00',  img: pusoRice     },
+    { name: 'Chicharon sa CarCar', price: 'P180.00', img: chicharon },
+    { name: 'Puto Cheese',        price: 'P150.00', img: putocheese },
+    { name: 'Piaya',             price: 'P90.00',  img: piyaya  },
+    { name: 'Peanut Kisses',     price: 'P60.00',  img: peanutkisses },
   ];
 
   const handleAddToCart = () => setCartCount((prev) => prev + 1);

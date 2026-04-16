@@ -31,12 +31,21 @@ export default function Login() {
             const data = await res.json();
 
             if (res.ok) {
-                // Save user data for the Homepage to display "Hello, User!"
+                // Clear old data to prevent landing on the wrong page due to cached roles
+                localStorage.clear(); 
+                
+                // Save fresh user data (includes the 'role' from your DB)
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
-                // REDIRECT TO HOMEPAGE.JSX ROUTE
-                // Ensure your App.js has: <Route path="/home" element={<Homepage />} />
-                navigate('/Home'); 
+                // --- ADMIN REDIRECTION LOGIC ---
+                // Match the lowercase 'admin' ENUM from your HeidiSQL database
+                if (data.user.role === 'admin') {
+                    navigate('/admin/dashboard'); 
+                } else {
+                    navigate('/Home'); 
+                }
+                // -------------------------------
+                
             } else {
                 setError(data.message || 'Login failed');
             }
@@ -70,7 +79,7 @@ export default function Login() {
 
                 <div className="w-full max-w-md z-10">
                     
-                    {/* BACK BUTTON (KEPT AS REQUESTED) */}
+                    {/* BACK BUTTON */}
                     <button 
                         onClick={() => navigate('/')} 
                         className="absolute top-8 right-8 flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-400 text-white font-bold text-sm transition-all duration-200 hover:bg-orange-600 hover:text-white hover:shadow-md active:scale-95 z-20"
@@ -120,7 +129,6 @@ export default function Login() {
                             <p className="text-red-500 text-sm font-medium text-center animate-pulse">{error}</p>
                         )}
 
-                        {/* SIGN IN BUTTON (THIS TRIGGERS handleSubmit AND REDIRECTS) */}
                         <button 
                             type="submit"
                             disabled={loading}

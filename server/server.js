@@ -10,13 +10,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Routes
 app.use('/api/users', userRoutes);
+
 // ✅ Test route
 app.get("/", (req, res) => {
     res.send("API is running...");
 });
 
-// ✅ REGISTER
+// ✅ REGISTER - Automatically sets role to 'customer'
 app.post("/register", async (req, res) => {
     const { first_name, last_name, email, password } = req.body;
 
@@ -36,6 +38,7 @@ app.post("/register", async (req, res) => {
 
         const hashed = await bcrypt.hash(password, 10);
 
+        // We explicitly pass 'customer' here so no one can register as an admin manually
         await db.query(
             "INSERT INTO user (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)",
             [first_name, last_name, email, hashed, "customer"]
@@ -47,7 +50,8 @@ app.post("/register", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
-// ✅ LOGIN
+
+// ✅ LOGIN - Fetches 'role' and sends it to React
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
@@ -56,6 +60,7 @@ app.post("/login", async (req, res) => {
     }
 
     try {
+        // SELECT * ensures the 'role' column from HeidiSQL is included in the 'rows'
         const [rows] = await db.query(
             "SELECT * FROM user WHERE email = ?",
             [email]
@@ -71,9 +76,14 @@ app.post("/login", async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
+        // Remove the password before sending the user object to the frontend
+        // The 'user' variable now contains user_id, first_name, email, and ROLE
         const { password: _, ...user } = rows[0];
 
-        res.json({ message: "Login successful", user });
+        res.json({ 
+            message: "Login successful", 
+            user: user 
+        });
     } catch (err) {
         console.error("LOGIN ERROR:", err.message);
         res.status(500).json({ message: err.message });
