@@ -1,11 +1,11 @@
 const express = require('express');
 const db = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireCustomer } = require('../middleware/auth');
 
 const router = express.Router();
 
 // GET /api/cart
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, requireCustomer, async (req, res) => {
   try {
     const [items] = await db.query(
       `SELECT ci.id, ci.quantity, p.id as product_id, p.name, p.price, p.image, p.stock, p.is_active, u.name as seller_name
@@ -25,7 +25,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // POST /api/cart
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, requireCustomer, async (req, res) => {
   try {
     const { product_id, quantity } = req.body;
     if (!product_id || !quantity || quantity < 1) {
@@ -55,7 +55,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PUT /api/cart/:id
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, requireCustomer, async (req, res) => {
   try {
     const { quantity } = req.body;
     if (!quantity || quantity < 1) return res.status(400).json({ message: 'Valid quantity required.' });
@@ -76,7 +76,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/cart/:id
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, requireCustomer, async (req, res) => {
   try {
     const [items] = await db.query('SELECT id FROM cart_items WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
     if (items.length === 0) return res.status(404).json({ message: 'Cart item not found.' });

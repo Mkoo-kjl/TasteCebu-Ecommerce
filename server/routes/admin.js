@@ -90,34 +90,4 @@ router.get('/orders', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/admin/orders/:id/status
-router.put('/orders/:id/status', requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const { status } = req.body;
-    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status.' });
-    }
-
-    const [orders] = await db.query('SELECT * FROM orders WHERE id = ?', [req.params.id]);
-    if (orders.length === 0) return res.status(404).json({ message: 'Order not found.' });
-
-    // If cancelling, restore stock
-    if (status === 'cancelled' && orders[0].status !== 'cancelled') {
-      const [items] = await db.query('SELECT product_id, quantity FROM order_items WHERE order_id = ?', [req.params.id]);
-      for (const item of items) {
-        if (item.product_id) {
-          await db.query('UPDATE products SET stock = stock + ? WHERE id = ?', [item.quantity, item.product_id]);
-        }
-      }
-    }
-
-    await db.query('UPDATE orders SET status = ? WHERE id = ?', [status, req.params.id]);
-    res.json({ message: `Order status updated to ${status}.` });
-  } catch (err) {
-    console.error('Update order status error:', err);
-    res.status(500).json({ message: 'Server error.' });
-  }
-});
-
 module.exports = router;

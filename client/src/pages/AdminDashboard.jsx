@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiUsers, FiFileText, FiPackage, FiCheck, FiX, FiClock, FiTruck, FiCheckCircle } from 'react-icons/fi';
+import { FiUsers, FiFileText, FiPackage, FiCheck, FiX, FiClock, FiTruck, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 
-const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+const STATUS_CONFIG = {
+  pending: { icon: <FiClock />, color: '#f59e0b', label: 'Pending' },
+  processing: { icon: <FiPackage />, color: '#3b82f6', label: 'Processing' },
+  shipped: { icon: <FiTruck />, color: '#8b5cf6', label: 'Shipped' },
+  delivered: { icon: <FiCheckCircle />, color: '#10b981', label: 'Delivered' },
+  cancelled: { icon: <FiXCircle />, color: '#ef4444', label: 'Cancelled' },
+};
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('applications');
@@ -42,17 +48,6 @@ export default function AdminDashboard() {
       setApplications(res.data.applications);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Action failed');
-    }
-  };
-
-  const handleOrderStatus = async (id, status) => {
-    try {
-      await api.put(`/admin/orders/${id}/status`, { status });
-      toast.success(`Order status updated to ${status}`);
-      const res = await api.get('/admin/orders');
-      setOrders(res.data.orders);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Update failed');
     }
   };
 
@@ -150,37 +145,42 @@ export default function AdminDashboard() {
 
           {activeTab === 'orders' && (
             <div className="admin-section">
+              <div className="admin-orders-notice">
+                <FiPackage size={16} />
+                <span>Orders are managed by their respective sellers. This is a read-only overview.</span>
+              </div>
               {orders.length === 0 ? (
                 <div className="empty-state"><span className="empty-icon">📦</span><h2>No orders</h2></div>
               ) : (
                 <div className="orders-list">
-                  {orders.map(order => (
-                    <div className="order-card" key={order.id} id={`admin-order-${order.id}`}>
-                      <div className="order-header">
-                        <div>
-                          <span className="order-id">Order #{order.id}</span>
-                          <span className="order-meta">by {order.user_name} • {new Date(order.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <select value={order.status}
-                          onChange={(e) => handleOrderStatus(order.id, e.target.value)}
-                          className={`status-select status-${order.status}`}>
-                          {ORDER_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                        </select>
-                      </div>
-                      <div className="order-items">
-                        {order.items?.map(item => (
-                          <div className="order-item" key={item.id}>
-                            <span>{item.product_name} × {item.quantity}</span>
-                            <span>₱{(item.product_price * item.quantity).toFixed(2)}</span>
+                  {orders.map(order => {
+                    const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+                    return (
+                      <div className="order-card" key={order.id} id={`admin-order-${order.id}`}>
+                        <div className="order-header">
+                          <div>
+                            <span className="order-id">Order #{order.id}</span>
+                            <span className="order-meta">by {order.user_name} • {new Date(order.created_at).toLocaleDateString()}</span>
                           </div>
-                        ))}
+                          <span className="status-badge" style={{ background: config.color + '20', color: config.color }}>
+                            {config.icon} {config.label}
+                          </span>
+                        </div>
+                        <div className="order-items">
+                          {order.items?.map(item => (
+                            <div className="order-item" key={item.id}>
+                              <span>{item.product_name} × {item.quantity}</span>
+                              <span>₱{(item.product_price * item.quantity).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="order-footer">
+                          <span>📍 {order.shipping_address}</span>
+                          <span className="order-total">Total: ₱{Number(order.total_amount).toFixed(2)}</span>
+                        </div>
                       </div>
-                      <div className="order-footer">
-                        <span>📍 {order.shipping_address}</span>
-                        <span className="order-total">Total: ₱{Number(order.total_amount).toFixed(2)}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

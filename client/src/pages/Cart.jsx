@@ -4,6 +4,18 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { FiTrash2, FiMinus, FiPlus, FiShoppingBag } from 'react-icons/fi';
 
+// Helper to get the first image from JSON array or legacy string
+function getFirstImage(imageField) {
+  if (!imageField) return null;
+  try {
+    const parsed = JSON.parse(imageField);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    return imageField;
+  } catch {
+    return imageField;
+  }
+}
+
 export default function Cart() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -78,27 +90,30 @@ export default function Cart() {
       ) : (
         <div className="cart-layout">
           <div className="cart-items">
-            {items.map(item => (
-              <div className="cart-item" key={item.id} id={`cart-item-${item.id}`}>
-                <div className="cart-item-image">
-                  {item.image ? <img src={item.image} alt={item.name} /> : <div className="product-placeholder-sm">🍽️</div>}
-                </div>
-                <div className="cart-item-info">
-                  <Link to={`/products/${item.product_id}`} className="cart-item-name">{item.name}</Link>
-                  <p className="cart-item-seller">by {item.seller_name}</p>
-                  <p className="cart-item-price">₱{Number(item.price).toFixed(2)}</p>
-                </div>
-                <div className="cart-item-actions">
-                  <div className="quantity-control">
-                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}><FiMinus size={14} /></button>
-                    <span>{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)} disabled={item.quantity >= item.stock}><FiPlus size={14} /></button>
+            {items.map(item => {
+              const itemImage = getFirstImage(item.image);
+              return (
+                <div className="cart-item" key={item.id} id={`cart-item-${item.id}`}>
+                  <div className="cart-item-image">
+                    {itemImage ? <img src={itemImage} alt={item.name} /> : <div className="product-placeholder-sm">🍽️</div>}
                   </div>
-                  <span className="cart-item-subtotal">₱{(item.price * item.quantity).toFixed(2)}</span>
-                  <button className="btn-icon danger" onClick={() => removeItem(item.id)}><FiTrash2 size={16} /></button>
+                  <div className="cart-item-info">
+                    <Link to={`/products/${item.product_id}`} className="cart-item-name">{item.name}</Link>
+                    <p className="cart-item-seller">by {item.seller_name}</p>
+                    <p className="cart-item-price">₱{Number(item.price).toFixed(2)}</p>
+                  </div>
+                  <div className="cart-item-actions">
+                    <div className="quantity-control">
+                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={item.quantity <= 1}><FiMinus size={14} /></button>
+                      <span>{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)} disabled={item.quantity >= item.stock}><FiPlus size={14} /></button>
+                    </div>
+                    <span className="cart-item-subtotal">₱{(item.price * item.quantity).toFixed(2)}</span>
+                    <button className="btn-icon danger" onClick={() => removeItem(item.id)}><FiTrash2 size={16} /></button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="cart-summary">

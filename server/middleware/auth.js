@@ -47,4 +47,12 @@ const requireSeller = (req, res, next) => {
   next();
 };
 
-module.exports = { requireAuth, requireAdmin, requireSeller };
+// Require customer role (blocks seller and admin from cart/orders)
+const requireCustomer = (req, res, next) => {
+  if (req.user.role !== 'user') {
+    return res.status(403).json({ message: 'Only customers can perform this action.' });
+  }
+  next();
+};
+
+module.exports = { requireAuth, requireAdmin, requireSeller, requireCustomer };

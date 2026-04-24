@@ -3,7 +3,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { FiShoppingCart, FiMinus, FiPlus, FiArrowLeft } from 'react-icons/fi';
+import { FiShoppingCart, FiMinus, FiPlus, FiArrowLeft, FiChevronLeft, FiChevronRight, FiInfo } from 'react-icons/fi';
+
+// Helper to parse images from product (handles JSON array or legacy single string)
+function parseImages(product) {
+  if (!product) return [];
+  const raw = product.image;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    return [raw];
+  } catch {
+    return [raw];
+  }
+}
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -13,6 +27,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -45,6 +60,9 @@ export default function ProductDetail() {
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
   if (!product) return null;
 
+  const images = parseImages(product);
+  const canAddToCart = !user || user.role === 'user';
+
   return (
     <div className="product-detail-page" id="product-detail-page">
       <button className="back-btn" onClick={() => navigate('/products')}>
@@ -53,8 +71,33 @@ export default function ProductDetail() {
 
       <div className="product-detail-grid">
         <div className="product-detail-image">
-          {product.image ? (
-            <img src={product.image} alt={product.name} />
+          {images.length > 0 ? (
+            <div className="image-gallery">
+              <div className="gallery-main">
+                {images.length > 1 && (
+                  <button className="gallery-nav prev" onClick={() => setActiveImageIndex((activeImageIndex - 1 + images.length) % images.length)}>
+                    <FiChevronLeft size={20} />
+                  </button>
+                )}
+                <img src={images[activeImageIndex]} alt={product.name} className="gallery-main-img" />
+                {images.length > 1 && (
+                  <button className="gallery-nav next" onClick={() => setActiveImageIndex((activeImageIndex + 1) % images.length)}>
+                    <FiChevronRight size={20} />
+                  </button>
+                )}
+              </div>
+              {images.length > 1 && (
+                <div className="gallery-thumbnails">
+                  {images.map((img, idx) => (
+                    <button key={idx} className={`gallery-thumb ${idx === activeImageIndex ? 'active' : ''}`}
+                      onClick={() => setActiveImageIndex(idx)}>
+                      <img src={img} alt={`${product.name} ${idx + 1}`} />
+                    </button>
+                  ))}
+                </div>
+              )}
+              <span className="image-counter">{activeImageIndex + 1} / {images.length}</span>
+            </div>
           ) : (
             <div className="product-placeholder-lg">🍽️</div>
           )}
@@ -73,7 +116,7 @@ export default function ProductDetail() {
             </span>
           </div>
 
-          {product.stock > 0 && (
+          {product.stock > 0 && canAddToCart && (
             <div className="add-to-cart-section">
               <div className="quantity-control">
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>
@@ -87,6 +130,13 @@ export default function ProductDetail() {
               <button className="btn btn-primary btn-lg add-cart-btn" onClick={handleAddToCart} disabled={adding} id="add-to-cart-btn">
                 <FiShoppingCart size={18} /> {adding ? 'Adding...' : 'Add to Cart'}
               </button>
+            </div>
+          )}
+
+          {user && user.role !== 'user' && (
+            <div className="role-notice">
+              <FiInfo size={16} />
+              <span>{user.role === 'seller' ? 'Sellers cannot purchase products.' : 'Admins cannot purchase products.'} Only customers can add items to cart.</span>
             </div>
           )}
         </div>

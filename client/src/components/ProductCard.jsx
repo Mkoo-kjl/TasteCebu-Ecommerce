@@ -1,13 +1,26 @@
 import { Link } from 'react-router-dom';
 import { FiShoppingCart } from 'react-icons/fi';
 
+// Helper to get the first image from JSON array or legacy string
+function getFirstImage(imageField) {
+  if (!imageField) return null;
+  try {
+    const parsed = JSON.parse(imageField);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    return imageField;
+  } catch {
+    return imageField;
+  }
+}
+
 export default function ProductCard({ product }) {
+  const image = getFirstImage(product.image);
   return (
     <div className="product-card" id={`product-card-${product.id}`}>
       <Link to={`/products/${product.id}`} className="product-card-link">
         <div className="product-card-image">
-          {product.image ? (
-            <img src={product.image} alt={product.name} />
+          {image ? (
+            <img src={image} alt={product.name} />
           ) : (
             <div className="product-placeholder">🍽️</div>
           )}

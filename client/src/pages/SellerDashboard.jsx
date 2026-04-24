@@ -2,19 +2,58 @@ import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
-import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiDollarSign, FiBox } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiDollarSign, FiBox, FiShoppingBag, FiX, FiImage,
+  FiClock, FiTruck, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 
 const CATEGORIES = ['Dried Fruits', 'Meat & Lechon', 'Pastries & Bread', 'Snacks', 'Beverages', 'Condiments', 'Seafood', 'Sweets', 'General'];
+const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
-const emptyProduct = { name: '', description: '', price: '', stock: '', image: '', category: 'General' };
+const STATUS_CONFIG = {
+  pending: { icon: <FiClock />, color: '#f59e0b', label: 'Pending' },
+  processing: { icon: <FiPackage />, color: '#3b82f6', label: 'Processing' },
+  shipped: { icon: <FiTruck />, color: '#8b5cf6', label: 'Shipped' },
+  delivered: { icon: <FiCheckCircle />, color: '#10b981', label: 'Delivered' },
+  cancelled: { icon: <FiXCircle />, color: '#ef4444', label: 'Cancelled' },
+};
+
+const emptyProduct = { name: '', description: '', price: '', stock: '', images: [], category: 'General' };
+
+// Helper to parse images from product
+function parseImages(product) {
+  if (!product) return [];
+  const raw = product.image;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    return [raw];
+  } catch {
+    return [raw];
+  }
+}
+
+// Helper to get first image
+function getFirstImage(imageField) {
+  if (!imageField) return null;
+  try {
+    const parsed = JSON.parse(imageField);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    return imageField;
+  } catch {
+    return imageField;
+  }
+}
 
 export default function SellerDashboard() {
+  const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [form, setForm] = useState({ ...emptyProduct });
   const [saving, setSaving] = useState(false);
+  const [orderFilter, setOrderFilter] = useState('all');
 
   const fetchProducts = async () => {
     try {
@@ -24,11 +63,24 @@ export default function SellerDashboard() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const params = orderFilter !== 'all' ? { status: orderFilter } : {};
+      const res = await api.get('/seller/orders', { params });
+      setOrders(res.data.orders);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'products') fetchProducts();
+    else fetchOrders();
+  }, [activeTab, orderFilter]);
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setForm({ ...emptyProduct });
+    setForm({ ...emptyProduct, images: [] });
     setModalOpen(true);
   };
 
@@ -37,18 +89,36 @@ export default function SellerDashboard() {
     setForm({
       name: product.name, description: product.description,
       price: product.price, stock: product.stock,
-      image: product.image || '', category: product.category || 'General',
+      images: parseImages(product), category: product.category || 'General',
     });
     setModalOpen(true);
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return toast.error('Image must be under 2MB');
-    const reader = new FileReader();
-    reader.onloadend = () => setForm({ ...form, image: reader.result });
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files);
+    if (form.images.length + files.length > 10) {
+      return toast.error('Maximum 10 images allowed');
+    }
+    files.forEach(file => {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds 2MB limit`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm(prev => ({ ...prev, images: [...prev.images, reader.result] }));
+      };
+      reader.readAsDataURL(file);
+    });
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  };
+
+  const removeImage = (index) => {
+    setForm(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -58,11 +128,19 @@ export default function SellerDashboard() {
     }
     setSaving(true);
     try {
+      const payload = {
+        name: form.name,
+        description: form.description,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        images: form.images,
+        category: form.category,
+      };
       if (editingProduct) {
-        await api.put(`/seller/products/${editingProduct.id}`, { ...form, price: Number(form.price), stock: Number(form.stock) });
+        await api.put(`/seller/products/${editingProduct.id}`, payload);
         toast.success('Product updated!');
       } else {
-        await api.post('/seller/products', { ...form, price: Number(form.price), stock: Number(form.stock) });
+        await api.post('/seller/products', payload);
         toast.success('Product created!');
       }
       setModalOpen(false);
@@ -85,6 +163,16 @@ export default function SellerDashboard() {
     }
   };
 
+  const handleOrderStatus = async (orderId, status) => {
+    try {
+      await api.put(`/seller/orders/${orderId}/status`, { status });
+      toast.success(`Order status updated to ${status}`);
+      fetchOrders();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Update failed');
+    }
+  };
+
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
 
   return (
@@ -92,65 +180,140 @@ export default function SellerDashboard() {
       <div className="page-header">
         <div>
           <h1>Seller Dashboard</h1>
-          <p>Manage your products</p>
+          <p>Manage your products and orders</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal} id="add-product-btn">
-          <FiPlus size={16} /> Add Product
+        {activeTab === 'products' && (
+          <button className="btn btn-primary" onClick={openCreateModal} id="add-product-btn">
+            <FiPlus size={16} /> Add Product
+          </button>
+        )}
+      </div>
+
+      <div className="tabs">
+        <button className={`tab ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>
+          <FiPackage size={14} /> Products
+        </button>
+        <button className={`tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
+          <FiShoppingBag size={14} /> Orders
         </button>
       </div>
 
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <FiPackage size={24} />
-          <div><span className="stat-number">{products.length}</span><span className="stat-label">Total Products</span></div>
-        </div>
-        <div className="stat-card">
-          <FiBox size={24} />
-          <div><span className="stat-number">{products.filter(p => p.is_active).length}</span><span className="stat-label">Active</span></div>
-        </div>
-        <div className="stat-card">
-          <FiDollarSign size={24} />
-          <div><span className="stat-number">{products.filter(p => p.stock <= 5 && p.stock > 0).length}</span><span className="stat-label">Low Stock</span></div>
-        </div>
-      </div>
+      {/* PRODUCTS TAB */}
+      {activeTab === 'products' && (
+        <>
+          <div className="dashboard-stats">
+            <div className="stat-card">
+              <FiPackage size={24} />
+              <div><span className="stat-number">{products.length}</span><span className="stat-label">Total Products</span></div>
+            </div>
+            <div className="stat-card">
+              <FiBox size={24} />
+              <div><span className="stat-number">{products.filter(p => p.is_active).length}</span><span className="stat-label">Active</span></div>
+            </div>
+            <div className="stat-card">
+              <FiDollarSign size={24} />
+              <div><span className="stat-number">{products.filter(p => p.stock <= 5 && p.stock > 0).length}</span><span className="stat-label">Low Stock</span></div>
+            </div>
+          </div>
 
-      {products.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">📦</span>
-          <h2>No products yet</h2>
-          <p>Create your first product to start selling!</p>
-          <button className="btn btn-primary" onClick={openCreateModal}>Add Product</button>
-        </div>
-      ) : (
-        <div className="products-table-wrapper">
-          <table className="data-table" id="seller-products-table">
-            <thead>
-              <tr>
-                <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map(p => (
-                <tr key={p.id}>
-                  <td><div className="table-img">{p.image ? <img src={p.image} alt={p.name} /> : '🍽️'}</div></td>
-                  <td><strong>{p.name}</strong></td>
-                  <td>{p.category}</td>
-                  <td>₱{Number(p.price).toFixed(2)}</td>
-                  <td><span className={p.stock <= 5 ? 'text-warning' : ''}>{p.stock}</span></td>
-                  <td><span className={`status-dot ${p.is_active ? 'active' : 'inactive'}`}>{p.is_active ? 'Active' : 'Inactive'}</span></td>
-                  <td>
-                    <div className="table-actions">
-                      <button className="btn-icon" onClick={() => openEditModal(p)} title="Edit"><FiEdit2 size={14} /></button>
-                      <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete"><FiTrash2 size={14} /></button>
+          {products.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">📦</span>
+              <h2>No products yet</h2>
+              <p>Create your first product to start selling!</p>
+              <button className="btn btn-primary" onClick={openCreateModal}>Add Product</button>
+            </div>
+          ) : (
+            <div className="products-table-wrapper">
+              <table className="data-table" id="seller-products-table">
+                <thead>
+                  <tr>
+                    <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map(p => {
+                    const firstImg = getFirstImage(p.image);
+                    return (
+                      <tr key={p.id}>
+                        <td><div className="table-img">{firstImg ? <img src={firstImg} alt={p.name} /> : '🍽️'}</div></td>
+                        <td><strong>{p.name}</strong></td>
+                        <td>{p.category}</td>
+                        <td>₱{Number(p.price).toFixed(2)}</td>
+                        <td><span className={p.stock <= 5 ? 'text-warning' : ''}>{p.stock}</span></td>
+                        <td><span className={`status-dot ${p.is_active ? 'active' : 'inactive'}`}>{p.is_active ? 'Active' : 'Inactive'}</span></td>
+                        <td>
+                          <div className="table-actions">
+                            <button className="btn-icon" onClick={() => openEditModal(p)} title="Edit"><FiEdit2 size={14} /></button>
+                            <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete"><FiTrash2 size={14} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ORDERS TAB */}
+      {activeTab === 'orders' && (
+        <div className="admin-section">
+          <div className="tabs sub-tabs">
+            {['all', ...ORDER_STATUSES].map(s => (
+              <button key={s} className={`tab ${orderFilter === s ? 'active' : ''}`}
+                onClick={() => setOrderFilter(s)}>
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {orders.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">📦</span>
+              <h2>No orders found</h2>
+              <p>{orderFilter === 'all' ? 'No customer orders yet.' : `No ${orderFilter} orders.`}</p>
+            </div>
+          ) : (
+            <div className="orders-list">
+              {orders.map(order => {
+                const config = STATUS_CONFIG[order.status];
+                return (
+                  <div className="order-card" key={order.id} id={`seller-order-${order.id}`}>
+                    <div className="order-header">
+                      <div>
+                        <span className="order-id">Order #{order.id}</span>
+                        <span className="order-meta">by {order.customer_name} ({order.customer_email}) • {new Date(order.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <select value={order.status}
+                        onChange={(e) => handleOrderStatus(order.id, e.target.value)}
+                        className={`status-select status-${order.status}`}>
+                        {ORDER_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                      </select>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <div className="order-items">
+                      {order.items?.map(item => (
+                        <div className="order-item" key={item.id}>
+                          <span>{item.product_name} × {item.quantity}</span>
+                          <span>₱{(item.product_price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="order-footer">
+                      <span>📍 {order.shipping_address}</span>
+                      <span className="order-total">Your Total: ₱{Number(order.seller_total).toFixed(2)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
+      {/* PRODUCT MODAL */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingProduct ? 'Edit Product' : 'Add New Product'}>
         <form onSubmit={handleSubmit} className="modal-form" id="product-form">
           <div className="form-group">
@@ -182,9 +345,29 @@ export default function SellerDashboard() {
             </select>
           </div>
           <div className="form-group">
-            <label>Product Image</label>
-            <input type="file" accept="image/*" onChange={handleImageChange} />
-            {form.image && <img src={form.image} alt="Preview" className="image-preview" />}
+            <label>Product Images <span className="label-hint">(up to 10, max 2MB each)</span></label>
+            <div className="multi-image-upload">
+              {form.images.length > 0 && (
+                <div className="image-previews-grid">
+                  {form.images.map((img, idx) => (
+                    <div className="image-preview-item" key={idx}>
+                      <img src={img} alt={`Preview ${idx + 1}`} />
+                      <button type="button" className="remove-image-btn" onClick={() => removeImage(idx)} title="Remove image">
+                        <FiX size={12} />
+                      </button>
+                      {idx === 0 && <span className="primary-badge">Main</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {form.images.length < 10 && (
+                <label className="image-upload-btn">
+                  <FiImage size={18} />
+                  <span>Add Images ({form.images.length}/10)</span>
+                  <input type="file" accept="image/*" multiple onChange={handleImageChange} style={{ display: 'none' }} />
+                </label>
+              )}
+            </div>
           </div>
           <button type="submit" className="btn btn-primary btn-full" disabled={saving}>
             {saving ? 'Saving...' : editingProduct ? 'Update Product' : 'Create Product'}

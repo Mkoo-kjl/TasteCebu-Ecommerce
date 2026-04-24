@@ -1,11 +1,11 @@
 const express = require('express');
 const db = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireCustomer } = require('../middleware/auth');
 
 const router = express.Router();
 
-// POST /api/orders - Place order from cart
-router.post('/', requireAuth, async (req, res) => {
+// POST /api/orders - Place order from cart (customers only)
+router.post('/', requireAuth, requireCustomer, async (req, res) => {
   try {
     const { shipping_address } = req.body;
     if (!shipping_address) return res.status(400).json({ message: 'Shipping address is required.' });
@@ -99,8 +99,8 @@ router.get('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/orders/:id/cancel
-router.put('/:id/cancel', requireAuth, async (req, res) => {
+// PUT /api/orders/:id/cancel (customers only)
+router.put('/:id/cancel', requireAuth, requireCustomer, async (req, res) => {
   try {
     const [orders] = await db.query('SELECT * FROM orders WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
     if (orders.length === 0) return res.status(404).json({ message: 'Order not found.' });

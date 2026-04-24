@@ -51,9 +51,11 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <Link to="/cart" className="cart-btn" id="nav-cart-btn">
-                <FiShoppingCart size={18} />
-              </Link>
+              {user.role === 'user' && (
+                <Link to="/cart" className="cart-btn" id="nav-cart-btn">
+                  <FiShoppingCart size={18} />
+                </Link>
+              )}
 
               <div className="user-menu" id="user-menu-dropdown">
                 <button className="user-avatar-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
