@@ -1,16 +1,39 @@
 const express = require('express');
-const db = require('./db'); // Import the DB pool
+const cors = require('cors');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const sellerRoutes = require('./routes/seller');
+const productRoutes = require('./routes/products');
+const cartRoutes = require('./routes/cart');
+const orderRoutes = require('./routes/orders');
+const adminRoutes = require('./routes/admin');
+
 const app = express();
 
-app.get('/test-db', async (req, res) => {
-  try {
-    // A simple query to check the connection
-    const [rows] = await db.query('SELECT 1 + 1 AS result');
-    res.json({ message: "Database connected!", result: rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Database connection failed.");
-  }
+// Middleware
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/seller', sellerRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-app.listen(5000, () => console.log('Server running on port 5000'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
