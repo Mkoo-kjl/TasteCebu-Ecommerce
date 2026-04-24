@@ -1,20 +1,16 @@
 const express = require('express');
-const cors = require('cors');
-const db = require('./db'); // Import the pool we just created
+const db = require('./db'); // Import the DB pool
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-
-// Example: Get all items from a 'products' table
-app.get('/api/products', async (req, res) => {
+app.get('/test-db', async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT * FROM products");
-    res.json(rows);
+    // A simple query to check the connection
+    const [rows] = await db.query('SELECT 1 + 1 AS result');
+    res.json({ message: "Database connected!", result: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Database error");
+    res.status(500).send("Database connection failed.");
   }
 });
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+app.listen(5000, () => console.log('Server running on port 5000'));

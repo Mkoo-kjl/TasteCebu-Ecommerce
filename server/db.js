@@ -1,26 +1,16 @@
-const { Sequelize } = require('sequelize');
+const mysql = require('mysql2');
 require('dotenv').config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME, 
-  process.env.DB_USER, 
-  process.env.DB_PASSWORD, 
-  {
-    host: process.env.DB_HOST,
-    dialect: 'mysql',
-    logging: false, // Keeps the terminal clean
-  }
-);
+// Create the connection pool
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',      // Your HeidiSQL username
+  password: '',      // Your HeidiSQL password
+  database: 'tastecebu', // The name of your DB in HeidiSQL
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-async function testConnection() {
-  try {
-    await sequelize.authenticate();
-    console.log('✅ Connection to MySQL (HeidiSQL) successful!');
-  } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
-  }
-}
-
-testConnection();
-
-module.exports = sequelize;
+// Export the promise-based version for cleaner async/await code
+module.exports = pool.promise();
