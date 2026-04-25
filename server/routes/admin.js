@@ -82,6 +82,17 @@ router.get('/orders', requireAuth, requireAdmin, async (req, res) => {
     for (let order of orders) {
       const [items] = await db.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
       order.items = items;
+
+      // Get business names for seller identification
+      const [businessNames] = await db.query(
+        `SELECT DISTINCT sa.business_name
+         FROM order_items oi
+         JOIN products p ON oi.product_id = p.id
+         JOIN seller_applications sa ON p.seller_id = sa.user_id AND sa.status = 'approved'
+         WHERE oi.order_id = ?`,
+        [order.id]
+      );
+      order.business_names = businessNames.map(b => b.business_name).filter(Boolean);
     }
     res.json({ orders });
   } catch (err) {

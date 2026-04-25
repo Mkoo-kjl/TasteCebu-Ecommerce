@@ -5,11 +5,50 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { FiSend, FiBriefcase, FiMapPin, FiPhone, FiFileText, FiClock, FiCheck, FiX } from 'react-icons/fi';
 
+const TERMS_AND_CONDITIONS = `TASTECEBU SELLER TERMS AND CONDITIONS
+
+Last Updated: April 2026
+
+By applying to become a seller on TasteCebu, you agree to the following Terms and Conditions:
+
+1. SELLER ELIGIBILITY
+You must be a legitimate business operating within Cebu, Philippines. You must provide accurate business information during registration. Misrepresentation of your business may result in immediate account termination.
+
+2. PRODUCT LISTINGS
+All products listed must be authentic, food-safe, and comply with local food safety regulations. You are responsible for the accuracy of product descriptions, pricing, and images. Misleading or false product information is strictly prohibited.
+
+3. ORDER FULFILLMENT
+Sellers must process and ship orders within the timeframe specified. Sellers must maintain adequate inventory to fulfill orders. Repeated failure to fulfill orders may result in account suspension.
+
+4. QUALITY STANDARDS
+All products must meet TasteCebu's quality standards. Sellers must maintain proper food handling, storage, and packaging practices. Products must be properly labeled with ingredients and allergen information where applicable.
+
+5. PRICING & FEES
+TasteCebu may charge a commission on each sale. Pricing must be fair and consistent. Price manipulation or deceptive pricing practices are prohibited.
+
+6. CUSTOMER SERVICE
+Sellers must respond to customer inquiries in a timely manner. Sellers must handle returns and refunds according to TasteCebu's refund policy. Sellers must maintain professional communication with customers.
+
+7. INTELLECTUAL PROPERTY
+Sellers must only list products they have the right to sell. Sellers must not infringe on any trademarks, copyrights, or other intellectual property rights.
+
+8. ACCOUNT TERMINATION
+TasteCebu reserves the right to suspend or terminate seller accounts for violations of these terms. Sellers may request account closure at any time.
+
+9. LIABILITY
+Sellers are responsible for the quality and safety of their products. TasteCebu is not liable for any damages arising from seller products. Sellers must maintain appropriate business insurance.
+
+10. MODIFICATIONS
+TasteCebu reserves the right to modify these terms at any time. Continued use of the platform constitutes acceptance of modified terms.
+
+By checking the box below, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.`;
+
 export default function SellerApply() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [application, setApplication] = useState(null);
   const [form, setForm] = useState({ business_name: '', business_description: '', business_address: '', business_phone: '' });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,9 +74,12 @@ export default function SellerApply() {
     if (!form.business_name.trim() || !form.business_description.trim() || !form.business_address.trim() || !form.business_phone.trim()) {
       return toast.error('All fields are required');
     }
+    if (!agreedToTerms) {
+      return toast.error('You must agree to the Terms and Conditions');
+    }
     setSubmitting(true);
     try {
-      const res = await api.post('/seller/apply', form);
+      const res = await api.post('/seller/apply', { ...form, agreed_to_terms: true });
       toast.success(res.data.message);
       const statusRes = await api.get('/seller/application-status');
       setApplication(statusRes.data.application);
@@ -104,7 +146,28 @@ export default function SellerApply() {
               onChange={(e) => setForm({ ...form, business_phone: e.target.value })} />
           </div>
         </div>
-        <button type="submit" className="btn btn-primary" disabled={submitting} id="submit-seller-app-btn">
+
+        {/* Terms and Conditions */}
+        <div className="terms-section" id="terms-section">
+          <label className="form-label"><FiFileText size={14} /> Terms and Conditions</label>
+          <div className="terms-content">
+            <pre className="terms-text">{TERMS_AND_CONDITIONS}</pre>
+          </div>
+          <label className="terms-checkbox" id="terms-checkbox-label">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              id="agree-terms-checkbox"
+            />
+            <span className="checkmark"></span>
+            <span className="terms-label-text">
+              I have read and agree to the <strong>Terms and Conditions</strong>
+            </span>
+          </label>
+        </div>
+
+        <button type="submit" className="btn btn-primary" disabled={submitting || !agreedToTerms} id="submit-seller-app-btn">
           <FiSend size={16} /> {submitting ? 'Submitting...' : 'Submit Application'}
         </button>
       </form>

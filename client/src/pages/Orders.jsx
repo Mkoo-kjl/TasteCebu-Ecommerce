@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiPackage, FiClock, FiTruck, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiPackage, FiClock, FiTruck, FiCheckCircle, FiXCircle, FiStar } from 'react-icons/fi';
 
 const STATUS_CONFIG = {
   pending: { icon: <FiClock />, color: '#f59e0b', label: 'Pending' },
@@ -12,6 +13,18 @@ const STATUS_CONFIG = {
 };
 
 const TABS = ['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+// Helper to parse first image from product_image field
+function getFirstImage(imageField) {
+  if (!imageField) return null;
+  try {
+    const parsed = JSON.parse(imageField);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    return imageField;
+  } catch {
+    return imageField;
+  }
+}
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
@@ -85,18 +98,26 @@ export default function Orders() {
                 </div>
 
                 <div className="order-items">
-                  {order.items && order.items.map(item => (
-                    <div className="order-item" key={item.id}>
-                      <div className="order-item-image">
-                        {item.product_image ? <img src={item.product_image} alt={item.product_name} /> : <div className="product-placeholder-sm">🍽️</div>}
+                  {order.items && order.items.map(item => {
+                    const itemImage = getFirstImage(item.product_image);
+                    return (
+                      <div className="order-item" key={item.id}>
+                        <div className="order-item-image">
+                          {itemImage ? <img src={itemImage} alt={item.product_name} /> : <div className="product-placeholder-sm">🍽️</div>}
+                        </div>
+                        <div className="order-item-info">
+                          <span className="order-item-name">{item.product_name}</span>
+                          <span className="order-item-meta">₱{Number(item.product_price).toFixed(2)} × {item.quantity}</span>
+                        </div>
+                        <span className="order-item-total">₱{(item.product_price * item.quantity).toFixed(2)}</span>
+                        {order.status === 'delivered' && item.product_id && (
+                          <Link to={`/products/${item.product_id}#reviews-section`} className="btn btn-sm btn-review" id={`review-btn-${item.id}`}>
+                            <FiStar size={13} /> Review
+                          </Link>
+                        )}
                       </div>
-                      <div className="order-item-info">
-                        <span className="order-item-name">{item.product_name}</span>
-                        <span className="order-item-meta">₱{Number(item.product_price).toFixed(2)} × {item.quantity}</span>
-                      </div>
-                      <span className="order-item-total">₱{(item.product_price * item.quantity).toFixed(2)}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="order-footer">

@@ -7,7 +7,16 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { category, search, sort } = req.query;
-    let query = `SELECT p.*, u.name as seller_name FROM products p JOIN users u ON p.seller_id = u.id WHERE p.is_active = 1`;
+    let query = `SELECT p.*, u.name as seller_name,
+                   COALESCE(rv.review_count, 0) as review_count,
+                   COALESCE(rv.avg_rating, 0) as avg_rating
+                 FROM products p
+                 JOIN users u ON p.seller_id = u.id
+                 LEFT JOIN (
+                   SELECT product_id, COUNT(*) as review_count, AVG(rating) as avg_rating
+                   FROM product_reviews GROUP BY product_id
+                 ) rv ON p.id = rv.product_id
+                 WHERE p.is_active = 1`;
     const values = [];
 
     if (category && category !== 'All') {
@@ -39,7 +48,16 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const [products] = await db.query(
-      `SELECT p.*, u.name as seller_name FROM products p JOIN users u ON p.seller_id = u.id WHERE p.id = ?`,
+      `SELECT p.*, u.name as seller_name,
+              COALESCE(rv.review_count, 0) as review_count,
+              COALESCE(rv.avg_rating, 0) as avg_rating
+       FROM products p
+       JOIN users u ON p.seller_id = u.id
+       LEFT JOIN (
+         SELECT product_id, COUNT(*) as review_count, AVG(rating) as avg_rating
+         FROM product_reviews GROUP BY product_id
+       ) rv ON p.id = rv.product_id
+       WHERE p.id = ?`,
       [req.params.id]
     );
     if (products.length === 0) return res.status(404).json({ message: 'Product not found.' });

@@ -3,10 +3,12 @@ import api from '../utils/api';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiDollarSign, FiBox, FiShoppingBag, FiX, FiImage,
-  FiClock, FiTruck, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+  FiClock, FiTruck, FiCheckCircle, FiXCircle, FiBarChart2, FiStar, FiTrendingUp, FiShoppingCart } from 'react-icons/fi';
 
 const CATEGORIES = ['Dried Fruits', 'Meat & Lechon', 'Pastries & Bread', 'Snacks', 'Beverages', 'Condiments', 'Seafood', 'Sweets', 'General'];
 const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+const ALLOWED_TYPES = ['image/png', 'image/jpeg'];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const STATUS_CONFIG = {
   pending: { icon: <FiClock />, color: '#f59e0b', label: 'Pending' },
@@ -44,10 +46,21 @@ function getFirstImage(imageField) {
   }
 }
 
+function StarDisplay({ rating, size = 14 }) {
+  return (
+    <span className="star-rating-inline">
+      {[1, 2, 3, 4, 5].map(s => (
+        <FiStar key={s} size={size} className={s <= Math.round(rating) ? 'star-filled' : 'star-empty'} />
+      ))}
+    </span>
+  );
+}
+
 export default function SellerDashboard() {
   const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -73,9 +86,19 @@ export default function SellerDashboard() {
     finally { setLoading(false); }
   };
 
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/seller/analytics');
+      setAnalytics(res.data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
+
   useEffect(() => {
     if (activeTab === 'products') fetchProducts();
-    else fetchOrders();
+    else if (activeTab === 'orders') fetchOrders();
+    else if (activeTab === 'analytics') fetchAnalytics();
   }, [activeTab, orderFilter]);
 
   const openCreateModal = () => {
@@ -100,8 +123,12 @@ export default function SellerDashboard() {
       return toast.error('Maximum 10 images allowed');
     }
     files.forEach(file => {
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error(`${file.name} exceeds 2MB limit`);
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error(`${file.name} is not a valid format. Only PNG and JPEG allowed.`);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name} exceeds 50MB limit`);
         return;
       }
       const reader = new FileReader();
@@ -195,6 +222,9 @@ export default function SellerDashboard() {
         </button>
         <button className={`tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
           <FiShoppingBag size={14} /> Orders
+        </button>
+        <button className={`tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
+          <FiBarChart2 size={14} /> Analytics
         </button>
       </div>
 
@@ -313,6 +343,109 @@ export default function SellerDashboard() {
         </div>
       )}
 
+      {/* ANALYTICS TAB */}
+      {activeTab === 'analytics' && analytics && (
+        <div className="analytics-section">
+          <div className="dashboard-stats analytics-stats">
+            <div className="stat-card stat-revenue">
+              <FiDollarSign size={24} />
+              <div>
+                <span className="stat-number">₱{analytics.summary.totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                <span className="stat-label">Total Revenue</span>
+              </div>
+            </div>
+            <div className="stat-card stat-orders">
+              <FiShoppingCart size={24} />
+              <div>
+                <span className="stat-number">{analytics.summary.totalOrders}</span>
+                <span className="stat-label">Delivered Orders</span>
+              </div>
+            </div>
+            <div className="stat-card stat-sold">
+              <FiTrendingUp size={24} />
+              <div>
+                <span className="stat-number">{analytics.summary.totalUnitsSold}</span>
+                <span className="stat-label">Units Sold</span>
+              </div>
+            </div>
+            <div className="stat-card stat-rating">
+              <FiStar size={24} />
+              <div>
+                <span className="stat-number">{analytics.summary.avgRating > 0 ? analytics.summary.avgRating : '—'}</span>
+                <span className="stat-label">Avg Rating ({analytics.summary.totalReviews} reviews)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Status Breakdown */}
+          {analytics.statusBreakdown && analytics.statusBreakdown.length > 0 && (
+            <div className="analytics-status-breakdown card">
+              <h3>Order Status Breakdown</h3>
+              <div className="status-pills">
+                {analytics.statusBreakdown.map(s => {
+                  const cfg = STATUS_CONFIG[s.status] || {};
+                  return (
+                    <div className="status-pill" key={s.status} style={{ borderColor: cfg.color }}>
+                      <span className="status-pill-icon" style={{ color: cfg.color }}>{cfg.icon}</span>
+                      <span className="status-pill-count">{s.count}</span>
+                      <span className="status-pill-label">{cfg.label || s.status}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Per-Product Performance */}
+          <div className="analytics-products card">
+            <h3>Product Performance</h3>
+            {analytics.productStats.length === 0 ? (
+              <p className="text-muted">No product data yet.</p>
+            ) : (
+              <div className="products-table-wrapper">
+                <table className="data-table" id="analytics-products-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Units Sold</th>
+                      <th>Revenue</th>
+                      <th>Avg Rating</th>
+                      <th>Reviews</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.productStats.map(p => (
+                      <tr key={p.id}>
+                        <td>
+                          <div className="analytics-product-name">
+                            {(() => {
+                              const img = getFirstImage(p.image);
+                              return img ? <img src={img} alt={p.name} className="analytics-thumb" /> : <span className="analytics-thumb-placeholder">🍽️</span>;
+                            })()}
+                            <strong>{p.name}</strong>
+                          </div>
+                        </td>
+                        <td>{Number(p.units_sold)}</td>
+                        <td>₱{Number(p.revenue).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                        <td>
+                          {Number(p.avg_rating) > 0 ? (
+                            <span className="analytics-rating">
+                              <StarDisplay rating={Number(p.avg_rating)} size={12} />
+                              <span>{Number(p.avg_rating).toFixed(1)}</span>
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td>{Number(p.review_count)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* PRODUCT MODAL */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingProduct ? 'Edit Product' : 'Add New Product'}>
         <form onSubmit={handleSubmit} className="modal-form" id="product-form">
@@ -345,7 +478,7 @@ export default function SellerDashboard() {
             </select>
           </div>
           <div className="form-group">
-            <label>Product Images <span className="label-hint">(up to 10, max 2MB each)</span></label>
+            <label>Product Images <span className="label-hint">(up to 10, PNG/JPEG only, max 50MB each)</span></label>
             <div className="multi-image-upload">
               {form.images.length > 0 && (
                 <div className="image-previews-grid">
@@ -364,7 +497,7 @@ export default function SellerDashboard() {
                 <label className="image-upload-btn">
                   <FiImage size={18} />
                   <span>Add Images ({form.images.length}/10)</span>
-                  <input type="file" accept="image/*" multiple onChange={handleImageChange} style={{ display: 'none' }} />
+                  <input type="file" accept="image/png, image/jpeg" multiple onChange={handleImageChange} style={{ display: 'none' }} />
                 </label>
               )}
             </div>

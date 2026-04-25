@@ -4,13 +4,34 @@ const { requireAuth, requireSeller } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Allowed image MIME prefixes
+const ALLOWED_IMAGE_PREFIXES = ['data:image/png', 'data:image/jpeg'];
+
+function isValidImageDataUri(dataUri) {
+  if (!dataUri) return true;
+  return ALLOWED_IMAGE_PREFIXES.some(prefix => dataUri.startsWith(prefix));
+}
+
+function validateImages(images) {
+  for (let i = 0; i < images.length; i++) {
+    if (!isValidImageDataUri(images[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // POST /api/seller/apply - Submit seller application
 router.post('/apply', requireAuth, async (req, res) => {
   try {
-    const { business_name, business_description, business_address, business_phone } = req.body;
+    const { business_name, business_description, business_address, business_phone, agreed_to_terms } = req.body;
 
     if (!business_name || !business_description || !business_address || !business_phone) {
       return res.status(400).json({ message: 'All fields are required.' });
+    }
+
+    if (!agreed_to_terms) {
+      return res.status(400).json({ message: 'You must agree to the Terms and Conditions.' });
     }
 
     // Check if user already has a pending/approved application
@@ -34,9 +55,9 @@ router.post('/apply', requireAuth, async (req, res) => {
     }
 
     await db.query(
-      `INSERT INTO seller_applications (user_id, business_name, business_description, business_address, business_phone)
-       VALUES (?, ?, ?, ?, ?)`,
-      [req.user.id, business_name.trim(), business_description.trim(), business_address.trim(), business_phone.trim()]
+      `INSERT INTO seller_applications (user_id, business_name, business_description, business_address, business_phone, agreed_to_terms)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [req.user.id, business_name.trim(), business_description.trim(), business_address.trim(), business_phone.trim(), 1]
     );
 
     res.status(201).json({ message: 'Seller application submitted successfully! Please wait for admin approval.' });
@@ -100,8 +121,14 @@ router.post('/products', requireAuth, requireSeller, async (req, res) => {
       if (images.length > 10) {
         return res.status(400).json({ message: 'Maximum 10 images allowed.' });
       }
+      if (!validateImages(images)) {
+        return res.status(400).json({ message: 'Only PNG and JPEG images are allowed.' });
+      }
       imageData = JSON.stringify(images);
     } else if (image) {
+      if (!isValidImageDataUri(image)) {
+        return res.status(400).json({ message: 'Only PNG and JPEG images are allowed.' });
+      }
       imageData = JSON.stringify([image]);
     }
 
@@ -143,9 +170,15 @@ router.put('/products/:id', requireAuth, requireSeller, async (req, res) => {
       if (images.length > 10) {
         return res.status(400).json({ message: 'Maximum 10 images allowed.' });
       }
+      if (!validateImages(images)) {
+        return res.status(400).json({ message: 'Only PNG and JPEG images are allowed.' });
+      }
       updates.push('image = ?');
       values.push(JSON.stringify(images));
     } else if (image !== undefined) {
+      if (image && !isValidImageDataUri(image)) {
+        return res.status(400).json({ message: 'Only PNG and JPEG images are allowed.' });
+      }
       updates.push('image = ?');
       values.push(image ? JSON.stringify([image]) : null);
     }
@@ -279,5 +312,97 @@ router.put('/orders/:id/status', requireAuth, requireSeller, async (req, res) =>
   }
 });
 
-module.exports = router;
+// =============================================
+// SELLER ANALYTICS
+// =============================================
 
+// GET /api/seller/analytics - Get seller analytics data
+router.get('/analytics', requireAuth, requireSeller, async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+
+    // Total revenue from delivered orders
+    const [revenueResult] = await db.query(
+      `SELECT
+         COALESCE(SUM(oi.product_price * oi.quantity), 0) as total_revenue,
+         COALESCE(SUM(oi.quantity), 0) as total_units_sold,
+         COUNT(DISTINCT o.id) as total_orders
+       FROM order_items oi
+       JOIN products p ON oi.product_id = p.id
+       JOIN orders o ON oi.order_id = o.id
+       WHERE p.seller_id = ? AND o.status = 'delivered'`,
+      [sellerId]
+    );
+
+    // Average seller rating from product reviews
+    const [ratingResult] = await db.query(
+      `SELECT
+         COUNT(*) as total_reviews,
+         COALESCE(AVG(pr.rating), 0) as avg_rating
+       FROM product_reviews pr
+       JOIN products p ON pr.product_id = p.id
+       WHERE p.seller_id = ?`,
+      [sellerId]
+    );
+
+    // Per-product breakdown
+    const [productStats] = await db.query(
+      `SELECT
+         p.id,
+         p.name,
+         p.image,
+         COALESCE(sales.units_sold, 0) as units_sold,
+         COALESCE(sales.revenue, 0) as revenue,
+         COALESCE(reviews.avg_rating, 0) as avg_rating,
+         COALESCE(reviews.review_count, 0) as review_count
+       FROM products p
+       LEFT JOIN (
+         SELECT oi.product_id,
+                SUM(oi.quantity) as units_sold,
+                SUM(oi.product_price * oi.quantity) as revenue
+         FROM order_items oi
+         JOIN orders o ON oi.order_id = o.id
+         WHERE o.status = 'delivered'
+         GROUP BY oi.product_id
+       ) sales ON p.id = sales.product_id
+       LEFT JOIN (
+         SELECT product_id,
+                AVG(rating) as avg_rating,
+                COUNT(*) as review_count
+         FROM product_reviews
+         GROUP BY product_id
+       ) reviews ON p.id = reviews.product_id
+       WHERE p.seller_id = ?
+       ORDER BY COALESCE(sales.revenue, 0) DESC`,
+      [sellerId]
+    );
+
+    // Order status breakdown
+    const [statusBreakdown] = await db.query(
+      `SELECT o.status, COUNT(DISTINCT o.id) as count
+       FROM orders o
+       JOIN order_items oi ON o.id = oi.order_id
+       JOIN products p ON oi.product_id = p.id
+       WHERE p.seller_id = ?
+       GROUP BY o.status`,
+      [sellerId]
+    );
+
+    res.json({
+      summary: {
+        totalRevenue: Number(revenueResult[0].total_revenue),
+        totalUnitsSold: Number(revenueResult[0].total_units_sold),
+        totalOrders: Number(revenueResult[0].total_orders),
+        totalReviews: Number(ratingResult[0].total_reviews),
+        avgRating: Number(Number(ratingResult[0].avg_rating).toFixed(1)),
+      },
+      productStats,
+      statusBreakdown,
+    });
+  } catch (err) {
+    console.error('Get seller analytics error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+module.exports = router;

@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                       <div className="order-card" key={order.id} id={`admin-order-${order.id}`}>
                         <div className="order-header">
                           <div>
-                            <span className="order-id">Order #{order.id}</span>
+                            <span className="order-id">{order.business_names && order.business_names.length > 0 ? order.business_names.join(', ') : `Order #${order.id}`}</span>
                             <span className="order-meta">by {order.user_name} • {new Date(order.created_at).toLocaleDateString()}</span>
                           </div>
                           <span className="status-badge" style={{ background: config.color + '20', color: config.color }}>

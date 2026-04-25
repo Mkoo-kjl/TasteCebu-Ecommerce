@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiShoppingCart } from 'react-icons/fi';
+import { FiStar } from 'react-icons/fi';
 
 // Helper to get the first image from JSON array or legacy string
 function getFirstImage(imageField) {
@@ -13,8 +13,25 @@ function getFirstImage(imageField) {
   }
 }
 
+function StarRating({ rating, size = 12 }) {
+  return (
+    <span className="star-rating-inline">
+      {[1, 2, 3, 4, 5].map(s => (
+        <FiStar
+          key={s}
+          size={size}
+          className={s <= Math.round(rating) ? 'star-filled' : 'star-empty'}
+        />
+      ))}
+    </span>
+  );
+}
+
 export default function ProductCard({ product }) {
   const image = getFirstImage(product.image);
+  const reviewCount = product.review_count || 0;
+  const avgRating = product.avg_rating ? Number(product.avg_rating).toFixed(1) : '0.0';
+
   return (
     <div className="product-card" id={`product-card-${product.id}`}>
       <Link to={`/products/${product.id}`} className="product-card-link">
@@ -28,7 +45,13 @@ export default function ProductCard({ product }) {
         </div>
         <div className="product-card-info">
           <h3 className="product-card-name">{product.name}</h3>
+          <p className="product-card-description">{product.description}</p>
           <p className="product-card-seller">by {product.seller_name}</p>
+          <div className="product-card-reviews">
+            <StarRating rating={Number(avgRating)} />
+            <span className="review-score">{avgRating}</span>
+            <span className="review-count">({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})</span>
+          </div>
           <div className="product-card-bottom">
             <span className="product-card-price">₱{Number(product.price).toFixed(2)}</span>
             <span className={`product-card-stock ${product.stock <= 5 ? 'low' : ''}`}>

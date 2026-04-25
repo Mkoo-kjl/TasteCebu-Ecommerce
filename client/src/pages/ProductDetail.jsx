@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { FiShoppingCart, FiMinus, FiPlus, FiArrowLeft, FiChevronLeft, FiChevronRight, FiInfo } from 'react-icons/fi';
+import { FiShoppingCart, FiMinus, FiPlus, FiArrowLeft, FiChevronLeft, FiChevronRight, FiInfo, FiStar, FiImage, FiSend, FiX } from 'react-icons/fi';
+
+const ALLOWED_TYPES = ['image/png', 'image/jpeg'];
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 // Helper to parse images from product (handles JSON array or legacy single string)
 function parseImages(product) {
@@ -19,6 +22,25 @@ function parseImages(product) {
   }
 }
 
+function StarRating({ rating, size = 16, interactive = false, onChange }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <span className="star-rating-inline">
+      {[1, 2, 3, 4, 5].map(s => (
+        <FiStar
+          key={s}
+          size={size}
+          className={s <= (interactive ? (hovered || rating) : Math.round(rating)) ? 'star-filled' : 'star-empty'}
+          style={interactive ? { cursor: 'pointer' } : {}}
+          onMouseEnter={interactive ? () => setHovered(s) : undefined}
+          onMouseLeave={interactive ? () => setHovered(0) : undefined}
+          onClick={interactive ? () => onChange(s) : undefined}
+        />
+      ))}
+    </span>
+  );
+}
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -29,11 +51,31 @@ export default function ProductDetail() {
   const [adding, setAdding] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+  // Reviews state
+  const [reviews, setReviews] = useState([]);
+  const [reviewStats, setReviewStats] = useState({ totalReviews: 0, avgRating: 0 });
+  const [canReview, setCanReview] = useState(false);
+  const [eligibleOrders, setEligibleOrders] = useState([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ order_id: '', rating: 0, comment: '', review_image: null });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Seller rating state
+  const [sellerRating, setSellerRating] = useState(null);
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const res = await api.get(`/products/${id}`);
         setProduct(res.data.product);
+
+        // Fetch seller rating
+        if (res.data.product.seller_id) {
+          try {
+            const ratingRes = await api.get(`/reviews/seller/${res.data.product.seller_id}/rating`);
+            setSellerRating(ratingRes.data);
+          } catch (e) { /* ignore */ }
+        }
       } catch (err) {
         toast.error('Product not found');
         navigate('/products');
@@ -42,7 +84,33 @@ export default function ProductDetail() {
       }
     };
     fetchProduct();
+    fetchReviews();
   }, [id]);
+
+  useEffect(() => {
+    if (user && product) {
+      checkCanReview();
+    }
+  }, [user, product]);
+
+  const fetchReviews = async () => {
+    try {
+      const res = await api.get(`/reviews/product/${id}`);
+      setReviews(res.data.reviews);
+      setReviewStats({ totalReviews: res.data.totalReviews, avgRating: res.data.avgRating });
+    } catch (err) { console.error('Fetch reviews error:', err); }
+  };
+
+  const checkCanReview = async () => {
+    try {
+      const res = await api.get(`/reviews/can-review/${id}`);
+      setCanReview(res.data.canReview);
+      setEligibleOrders(res.data.eligibleOrders || []);
+      if (res.data.eligibleOrders?.length > 0) {
+        setReviewForm(prev => ({ ...prev, order_id: res.data.eligibleOrders[0].order_id }));
+      }
+    } catch (err) { console.error('Check can review error:', err); }
+  };
 
   const handleAddToCart = async () => {
     if (!user) { navigate('/login'); return; }
@@ -54,6 +122,46 @@ export default function ProductDetail() {
       toast.error(err.response?.data?.message || 'Failed to add to cart');
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleReviewImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return toast.error('Only PNG and JPEG images are allowed.');
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return toast.error('Image must be under 50MB');
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => setReviewForm(prev => ({ ...prev, review_image: reader.result }));
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!reviewForm.rating) return toast.error('Please select a rating');
+    if (!reviewForm.order_id) return toast.error('Please select an order');
+
+    setSubmittingReview(true);
+    try {
+      await api.post(`/reviews/product/${id}`, {
+        order_id: reviewForm.order_id,
+        rating: reviewForm.rating,
+        comment: reviewForm.comment,
+        review_image: reviewForm.review_image,
+      });
+      toast.success('Review submitted!');
+      setShowReviewForm(false);
+      setReviewForm({ order_id: '', rating: 0, comment: '', review_image: null });
+      fetchReviews();
+      checkCanReview();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -106,7 +214,15 @@ export default function ProductDetail() {
         <div className="product-detail-info">
           <span className="product-category-badge">{product.category}</span>
           <h1>{product.name}</h1>
-          <p className="product-seller">Sold by <strong>{product.seller_name}</strong></p>
+          <div className="product-seller-row">
+            <p className="product-seller">Sold by <strong>{product.seller_name}</strong></p>
+            {sellerRating && sellerRating.totalReviews > 0 && (
+              <span className="seller-rating-badge">
+                <StarRating rating={sellerRating.avgRating} size={13} />
+                <span>{sellerRating.avgRating} ({sellerRating.totalReviews} seller reviews)</span>
+              </span>
+            )}
+          </div>
           <p className="product-price-lg">₱{Number(product.price).toFixed(2)}</p>
           <p className="product-description">{product.description}</p>
 
@@ -140,6 +256,125 @@ export default function ProductDetail() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ========== REVIEWS SECTION ========== */}
+      <div className="reviews-section" id="reviews-section">
+        <div className="reviews-header">
+          <div className="reviews-summary">
+            <h2>Customer Reviews</h2>
+            <div className="reviews-aggregate">
+              <span className="reviews-avg-large">{reviewStats.avgRating > 0 ? reviewStats.avgRating : '—'}</span>
+              <div className="reviews-avg-detail">
+                <StarRating rating={reviewStats.avgRating} size={18} />
+                <span className="reviews-total-count">{reviewStats.totalReviews} {reviewStats.totalReviews === 1 ? 'review' : 'reviews'}</span>
+              </div>
+            </div>
+          </div>
+          {canReview && !showReviewForm && (
+            <button className="btn btn-primary" onClick={() => setShowReviewForm(true)} id="write-review-btn">
+              <FiStar size={16} /> Write a Review
+            </button>
+          )}
+        </div>
+
+        {/* Review Form */}
+        {showReviewForm && (
+          <form onSubmit={handleSubmitReview} className="review-form card" id="review-form">
+            <div className="review-form-header">
+              <h3>Write Your Review</h3>
+              <button type="button" className="btn-icon" onClick={() => setShowReviewForm(false)}><FiX size={18} /></button>
+            </div>
+
+            {eligibleOrders.length > 1 && (
+              <div className="form-group">
+                <label>Select Order</label>
+                <select value={reviewForm.order_id} onChange={(e) => setReviewForm(prev => ({ ...prev, order_id: Number(e.target.value) }))}>
+                  {eligibleOrders.map(o => (
+                    <option key={o.order_id} value={o.order_id}>
+                      Order #{o.order_id} — {new Date(o.order_date).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label>Rating</label>
+              <div className="rating-picker">
+                <StarRating rating={reviewForm.rating} size={28} interactive onChange={(r) => setReviewForm(prev => ({ ...prev, rating: r }))} />
+                <span className="rating-label">{reviewForm.rating > 0 ? ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][reviewForm.rating] : 'Select rating'}</span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Comment</label>
+              <textarea rows={3} placeholder="Share your experience with this product..."
+                value={reviewForm.comment}
+                onChange={(e) => setReviewForm(prev => ({ ...prev, comment: e.target.value }))} />
+            </div>
+
+            <div className="form-group">
+              <label>Photo <span className="label-hint">(optional, PNG/JPEG only)</span></label>
+              {reviewForm.review_image ? (
+                <div className="review-image-preview">
+                  <img src={reviewForm.review_image} alt="Review" />
+                  <button type="button" className="remove-image-btn" onClick={() => setReviewForm(prev => ({ ...prev, review_image: null }))}>
+                    <FiX size={12} />
+                  </button>
+                </div>
+              ) : (
+                <label className="image-upload-btn">
+                  <FiImage size={18} />
+                  <span>Attach Photo</span>
+                  <input type="file" accept="image/png, image/jpeg" onChange={handleReviewImageChange} style={{ display: 'none' }} />
+                </label>
+              )}
+            </div>
+
+            <button type="submit" className="btn btn-primary" disabled={submittingReview} id="submit-review-btn">
+              <FiSend size={16} /> {submittingReview ? 'Submitting...' : 'Submit Review'}
+            </button>
+          </form>
+        )}
+
+        {/* Reviews List */}
+        {reviews.length === 0 ? (
+          <div className="empty-state reviews-empty">
+            <span className="empty-icon">💬</span>
+            <h3>No reviews yet</h3>
+            <p>Be the first to review this product!</p>
+          </div>
+        ) : (
+          <div className="reviews-list">
+            {reviews.map(review => (
+              <div className="review-card" key={review.id} id={`review-${review.id}`}>
+                <div className="review-card-header">
+                  <div className="review-author">
+                    {review.reviewer_avatar ? (
+                      <img src={review.reviewer_avatar} alt={review.reviewer_name} className="review-avatar" />
+                    ) : (
+                      <div className="review-avatar-placeholder">
+                        {review.reviewer_name?.charAt(0)?.toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <span className="review-author-name">{review.reviewer_name}</span>
+                      <span className="review-date">{new Date(review.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                  </div>
+                  <StarRating rating={review.rating} size={14} />
+                </div>
+                {review.comment && <p className="review-comment">{review.comment}</p>}
+                {review.review_image && (
+                  <div className="review-photo">
+                    <img src={review.review_image} alt="Review" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

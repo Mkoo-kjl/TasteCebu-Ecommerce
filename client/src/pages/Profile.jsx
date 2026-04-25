@@ -23,7 +23,9 @@ export default function Profile() {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return toast.error('Image must be under 2MB');
+    const allowedTypes = ['image/png', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) return toast.error('Only PNG and JPEG images are allowed');
+    if (file.size > 50 * 1024 * 1024) return toast.error('Image must be under 50MB');
     const reader = new FileReader();
     reader.onloadend = () => setAvatar(reader.result);
     reader.readAsDataURL(file);
@@ -88,7 +90,7 @@ export default function Profile() {
               {avatar ? <img src={avatar} alt="Avatar" /> : <FiUser size={40} />}
               <label className="avatar-upload" htmlFor="avatar-input">
                 <FiCamera size={16} />
-                <input type="file" id="avatar-input" accept="image/*" onChange={handleAvatarChange} hidden />
+                <input type="file" id="avatar-input" accept="image/png, image/jpeg" onChange={handleAvatarChange} hidden />
               </label>
             </div>
             <div>

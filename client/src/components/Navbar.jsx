@@ -75,9 +75,11 @@ export default function Navbar() {
                     <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
                       <FiUser size={14} /> Profile
                     </Link>
-                    <Link to="/orders" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
-                      <FiPackage size={14} /> Orders
-                    </Link>
+                    {user.role !== 'admin' && (
+                      <Link to="/orders" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                        <FiPackage size={14} /> Orders
+                      </Link>
+                    )}
                     <Link to="/settings" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
                       <FiSettings size={14} /> Settings
                     </Link>
