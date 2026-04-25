@@ -79,7 +79,7 @@ async function seed() {
 
     console.log('\nSeed completed successfully!');
   } catch (err) {
-    console.error('Seed failed:', err.message);
+    console.error('Seed failed:', err);
     process.exit(1);
   } finally {
     if (connection) await connection.end();
