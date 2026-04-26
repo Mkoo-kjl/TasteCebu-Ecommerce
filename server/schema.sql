@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS seller_applications (
   business_description TEXT NOT NULL,
   business_address VARCHAR(500) NOT NULL,
   business_phone VARCHAR(20) NOT NULL,
+  agreed_to_terms TINYINT(1) DEFAULT 0,
   status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  subscription_plan ENUM('basic', 'pro', 'enterprise') DEFAULT 'basic',
   admin_notes TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -43,7 +45,7 @@ CREATE TABLE IF NOT EXISTS products (
   stock INT NOT NULL DEFAULT 0,
   image LONGTEXT DEFAULT NULL,
   category VARCHAR(100) DEFAULT 'General',
-  is_active TINYINT(1) DEFAULT 1,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
@@ -95,19 +97,18 @@ CREATE TABLE IF NOT EXISTS user_settings (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Reviews table
-CREATE TABLE IF NOT EXISTS reviews (
+-- Product reviews table
+CREATE TABLE IF NOT EXISTS product_reviews (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   product_id INT NOT NULL,
-  order_id INT NOT NULL,
+  order_id INT DEFAULT NULL,
   rating TINYINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
   comment TEXT DEFAULT NULL,
-  image LONGTEXT DEFAULT NULL,
+  review_image LONGTEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  UNIQUE KEY unique_review (user_id, product_id, order_id)
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -12,10 +12,10 @@ const STATUS_CONFIG = {
 };
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('applications');
+  const [activeTab, setActiveTab] = useState('analytics');
+  const [analytics, setAnalytics] = useState(null);
   const [applications, setApplications] = useState([]);
   const [users, setUsers] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adminNotes, setAdminNotes] = useState('');
 
@@ -23,15 +23,15 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        if (activeTab === 'applications') {
+        if (activeTab === 'analytics') {
+          const res = await api.get('/admin/analytics');
+          setAnalytics(res.data.analytics);
+        } else if (activeTab === 'applications') {
           const res = await api.get('/admin/applications');
           setApplications(res.data.applications);
         } else if (activeTab === 'users') {
           const res = await api.get('/admin/users');
           setUsers(res.data.users);
-        } else if (activeTab === 'orders') {
-          const res = await api.get('/admin/orders');
-          setOrders(res.data.orders);
         }
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
@@ -59,14 +59,14 @@ export default function AdminDashboard() {
       </div>
 
       <div className="tabs">
+        <button className={`tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
+          <FiCheckCircle size={14} /> Analytics
+        </button>
         <button className={`tab ${activeTab === 'applications' ? 'active' : ''}`} onClick={() => setActiveTab('applications')}>
           <FiFileText size={14} /> Applications
         </button>
         <button className={`tab ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
           <FiUsers size={14} /> Users
-        </button>
-        <button className={`tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-          <FiPackage size={14} /> Orders
         </button>
       </div>
 
@@ -115,6 +115,15 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       )}
+                      {app.status === 'approved' && (
+                        <div className="app-actions">
+                          <div className="btn-group">
+                            <button className="btn btn-danger btn-sm" onClick={() => { if(confirm('Are you sure you want to terminate this seller?')) handleApplication(app.id, 'rejected'); }}>
+                              <FiX size={14} /> Terminate
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -143,46 +152,22 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {activeTab === 'orders' && (
+          {activeTab === 'analytics' && analytics && (
             <div className="admin-section">
-              <div className="admin-orders-notice">
-                <FiPackage size={16} />
-                <span>Orders are managed by their respective sellers. This is a read-only overview.</span>
-              </div>
-              {orders.length === 0 ? (
-                <div className="empty-state"><span className="empty-icon">📦</span><h2>No orders</h2></div>
-              ) : (
-                <div className="orders-list">
-                  {orders.map(order => {
-                    const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-                    return (
-                      <div className="order-card" key={order.id} id={`admin-order-${order.id}`}>
-                        <div className="order-header">
-                          <div>
-                            <span className="order-id">{order.business_names && order.business_names.length > 0 ? order.business_names.join(', ') : `Order #${order.id}`}</span>
-                            <span className="order-meta">by {order.user_name} • {new Date(order.created_at).toLocaleDateString()}</span>
-                          </div>
-                          <span className="status-badge" style={{ background: config.color + '20', color: config.color }}>
-                            {config.icon} {config.label}
-                          </span>
-                        </div>
-                        <div className="order-items">
-                          {order.items?.map(item => (
-                            <div className="order-item" key={item.id}>
-                              <span>{item.product_name} × {item.quantity}</span>
-                              <span>₱{(item.product_price * item.quantity).toFixed(2)}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="order-footer">
-                          <span>📍 {order.shipping_address}</span>
-                          <span className="order-total">Total: ₱{Number(order.total_amount).toFixed(2)}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div className="analytics-dashboard" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <h3 style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '10px' }}>Total Shops</h3>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#10b981' }}>{analytics.total_shops}</div>
                 </div>
-              )}
+                <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <h3 style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '10px' }}>Total Sellers</h3>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#3b82f6' }}>{analytics.total_sellers}</div>
+                </div>
+                <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <h3 style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '10px' }}>Total Users</h3>
+                  <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#f59e0b' }}>{analytics.total_users}</div>
+                </div>
+              </div>
             </div>
           )}
         </>

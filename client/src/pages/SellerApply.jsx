@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { FiSend, FiBriefcase, FiMapPin, FiPhone, FiFileText, FiClock, FiCheck, FiX } from 'react-icons/fi';
+import { FiSend, FiBriefcase, FiMapPin, FiPhone, FiFileText, FiClock, FiCheck, FiX, FiCheckCircle } from 'react-icons/fi';
 
 const TERMS_AND_CONDITIONS = `TASTECEBU SELLER TERMS AND CONDITIONS
 
@@ -51,6 +51,8 @@ export default function SellerApply() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [subscriptionPaid, setSubscriptionPaid] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('basic');
 
   useEffect(() => {
     if (user?.role === 'seller') { navigate('/seller/dashboard'); return; }
@@ -79,7 +81,7 @@ export default function SellerApply() {
     }
     setSubmitting(true);
     try {
-      const res = await api.post('/seller/apply', { ...form, agreed_to_terms: true });
+      const res = await api.post('/seller/apply', { ...form, agreed_to_terms: true, subscription_plan: selectedPlan });
       toast.success(res.data.message);
       const statusRes = await api.get('/seller/application-status');
       setApplication(statusRes.data.application);
@@ -111,6 +113,94 @@ export default function SellerApply() {
           {application.status === 'rejected' && (
             <button className="btn btn-primary" onClick={() => setApplication(null)}>Submit New Application</button>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!subscriptionPaid) {
+    return (
+      <div className="seller-apply-page" id="seller-apply-page">
+        <div className="page-header">
+          <h1>Seller Subscriptions</h1>
+          <p>Choose a plan that fits your business to start selling.</p>
+        </div>
+        
+        <div className="subscription-plans" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+          
+          {/* Basic Plan */}
+          <div 
+            className={`subscription-card card plan-card ${selectedPlan === 'basic' ? 'selected' : ''}`} 
+            style={{ textAlign: 'center', padding: '40px 20px', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.3s', border: selectedPlan === 'basic' ? '2px solid #64748b' : '2px solid transparent', boxShadow: selectedPlan === 'basic' ? '0 0 0 4px rgba(100, 116, 139, 0.2), 0 15px 30px rgba(0,0,0,0.1)' : '', transform: selectedPlan === 'basic' ? 'translateY(-8px)' : 'none' }}
+            onClick={() => setSelectedPlan('basic')}
+          >
+            <div style={{ marginBottom: '20px', transition: 'transform 0.3s', transform: selectedPlan === 'basic' ? 'scale(1.1)' : 'scale(1)' }}>
+              <FiCheckCircle size={40} color={selectedPlan === 'basic' ? '#64748b' : '#cbd5e1'} />
+            </div>
+            <h2>Basic Plan</h2>
+            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#64748b', margin: '20px 0' }}>
+              ₱199 <span style={{ fontSize: '1rem', color: '#94a3b8' }}>/ month</span>
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto 30px auto', textAlign: 'left', flex: 1, display: 'inline-block' }}>
+              <li style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><FiCheck color="#10b981" /> Up to 50 Products</li>
+              <li style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><FiCheck color="#10b981" /> Standard Dashboard</li>
+              <li style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><FiCheck color="#10b981" /> Standard Support</li>
+            </ul>
+          </div>
+
+          {/* Pro Plan */}
+          <div 
+            className={`subscription-card card plan-card ${selectedPlan === 'pro' ? 'selected' : ''}`} 
+            style={{ textAlign: 'center', padding: '40px 20px', display: 'flex', flexDirection: 'column', position: 'relative', cursor: 'pointer', transition: 'all 0.3s', border: selectedPlan === 'pro' ? '2px solid #3b82f6' : '2px solid transparent', boxShadow: selectedPlan === 'pro' ? '0 0 0 4px rgba(59, 130, 246, 0.2), 0 20px 40px rgba(59, 130, 246, 0.15)' : '0 8px 25px rgba(0,0,0,0.08)', transform: selectedPlan === 'pro' ? 'scale(1.05) translateY(-8px)' : 'scale(1.05)', background: selectedPlan === 'pro' ? 'linear-gradient(180deg, #ffffff 0%, #eff6ff 100%)' : '#ffffff', zIndex: 2 }}
+            onClick={() => setSelectedPlan('pro')}
+          >
+            <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', padding: '6px 20px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)' }}>Most Popular</div>
+            <div style={{ marginBottom: '20px', transition: 'transform 0.3s', transform: selectedPlan === 'pro' ? 'scale(1.15)' : 'scale(1)', marginTop: '10px' }}>
+              <FiCheckCircle size={54} color={selectedPlan === 'pro' ? '#3b82f6' : '#cbd5e1'} />
+            </div>
+            <h2 style={{ fontSize: '1.8rem', color: '#1e293b' }}>Pro Plan</h2>
+            <div style={{ fontSize: '3.2rem', fontWeight: '900', color: '#3b82f6', margin: '15px 0' }}>
+              ₱499 <span style={{ fontSize: '1.2rem', color: '#64748b', fontWeight: '500' }}>/ month</span>
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto 30px auto', textAlign: 'left', flex: 1, display: 'inline-block', color: '#334155' }}>
+              <li style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '500', fontSize: '1.05rem' }}><FiCheck color="#10b981" size={20} /> Unlimited Products</li>
+              <li style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '500', fontSize: '1.05rem' }}><FiCheck color="#10b981" size={20} /> Advanced Analytics</li>
+              <li style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '500', fontSize: '1.05rem' }}><FiCheck color="#10b981" size={20} /> Priority Support</li>
+              <li style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '500', fontSize: '1.05rem' }}><FiCheck color="#10b981" size={20} /> Featured Placement</li>
+            </ul>
+          </div>
+
+          {/* Enterprise Plan */}
+          <div 
+            className={`subscription-card card plan-card ${selectedPlan === 'enterprise' ? 'selected' : ''}`} 
+            style={{ textAlign: 'center', padding: '40px 20px', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.3s', border: selectedPlan === 'enterprise' ? '2px solid #f59e0b' : '2px solid transparent', boxShadow: selectedPlan === 'enterprise' ? '0 0 0 4px rgba(245, 158, 11, 0.2), 0 15px 30px rgba(0,0,0,0.1)' : '', transform: selectedPlan === 'enterprise' ? 'translateY(-8px)' : 'none' }}
+            onClick={() => setSelectedPlan('enterprise')}
+          >
+            <div style={{ marginBottom: '20px', transition: 'transform 0.3s', transform: selectedPlan === 'enterprise' ? 'scale(1.1)' : 'scale(1)' }}>
+              <FiCheckCircle size={40} color={selectedPlan === 'enterprise' ? '#f59e0b' : '#cbd5e1'} />
+            </div>
+            <h2>Enterprise Plan</h2>
+            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#f59e0b', margin: '20px 0' }}>
+              ₱999 <span style={{ fontSize: '1rem', color: '#94a3b8' }}>/ month</span>
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto 30px auto', textAlign: 'left', flex: 1, display: 'inline-block' }}>
+              <li style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><FiCheck color="#10b981" /> Unlimited Everything</li>
+              <li style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><FiCheck color="#10b981" /> Custom Shop Design</li>
+              <li style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><FiCheck color="#10b981" /> Dedicated Account Manager</li>
+              <li style={{ margin: '10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}><FiCheck color="#10b981" /> Top Tier Visibility</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '40px' }}>
+          <button 
+            className="btn btn-primary btn-lg" 
+            style={{ padding: '16px 40px', fontSize: '1.2rem', minWidth: '300px', boxShadow: '0 8px 25px rgba(232, 130, 12, 0.4)' }}
+            onClick={() => { toast.success(`Payment for ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} plan successful!`); setSubscriptionPaid(true); }}
+          >
+            Pay ₱{selectedPlan === 'basic' ? '199' : selectedPlan === 'pro' ? '499' : '999'} & Continue
+          </button>
         </div>
       </div>
     );

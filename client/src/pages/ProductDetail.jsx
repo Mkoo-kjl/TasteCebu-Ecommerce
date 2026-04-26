@@ -57,7 +57,7 @@ export default function ProductDetail() {
   const [canReview, setCanReview] = useState(false);
   const [eligibleOrders, setEligibleOrders] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ order_id: '', rating: 0, comment: '', review_image: null });
+  const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '', review_image: null });
   const [submittingReview, setSubmittingReview] = useState(false);
 
   // Seller rating state
@@ -105,10 +105,7 @@ export default function ProductDetail() {
     try {
       const res = await api.get(`/reviews/can-review/${id}`);
       setCanReview(res.data.canReview);
-      setEligibleOrders(res.data.eligibleOrders || []);
-      if (res.data.eligibleOrders?.length > 0) {
-        setReviewForm(prev => ({ ...prev, order_id: res.data.eligibleOrders[0].order_id }));
-      }
+      setCanReview(res.data.canReview);
     } catch (err) { console.error('Check can review error:', err); }
   };
 
@@ -143,19 +140,17 @@ export default function ProductDetail() {
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!reviewForm.rating) return toast.error('Please select a rating');
-    if (!reviewForm.order_id) return toast.error('Please select an order');
 
     setSubmittingReview(true);
     try {
       await api.post(`/reviews/product/${id}`, {
-        order_id: reviewForm.order_id,
         rating: reviewForm.rating,
         comment: reviewForm.comment,
         review_image: reviewForm.review_image,
       });
       toast.success('Review submitted!');
       setShowReviewForm(false);
-      setReviewForm({ order_id: '', rating: 0, comment: '', review_image: null });
+      setReviewForm({ rating: 0, comment: '', review_image: null });
       fetchReviews();
       checkCanReview();
     } catch (err) {
@@ -286,18 +281,7 @@ export default function ProductDetail() {
               <button type="button" className="btn-icon" onClick={() => setShowReviewForm(false)}><FiX size={18} /></button>
             </div>
 
-            {eligibleOrders.length > 1 && (
-              <div className="form-group">
-                <label>Select Order</label>
-                <select value={reviewForm.order_id} onChange={(e) => setReviewForm(prev => ({ ...prev, order_id: Number(e.target.value) }))}>
-                  {eligibleOrders.map(o => (
-                    <option key={o.order_id} value={o.order_id}>
-                      Order #{o.order_id} — {new Date(o.order_date).toLocaleDateString()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+
 
             <div className="form-group">
               <label>Rating</label>

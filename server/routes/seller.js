@@ -24,7 +24,7 @@ function validateImages(images) {
 // POST /api/seller/apply - Submit seller application
 router.post('/apply', requireAuth, async (req, res) => {
   try {
-    const { business_name, business_description, business_address, business_phone, agreed_to_terms } = req.body;
+    const { business_name, business_description, business_address, business_phone, agreed_to_terms, subscription_plan } = req.body;
 
     if (!business_name || !business_description || !business_address || !business_phone) {
       return res.status(400).json({ message: 'All fields are required.' });
@@ -54,16 +54,31 @@ router.post('/apply', requireAuth, async (req, res) => {
       return res.status(400).json({ message: 'You are already a seller.' });
     }
 
-    await db.query(
-      `INSERT INTO seller_applications (user_id, business_name, business_description, business_address, business_phone, agreed_to_terms)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [req.user.id, business_name.trim(), business_description.trim(), business_address.trim(), business_phone.trim(), 1]
-    );
+    // Try inserting with agreed_to_terms column first, fallback without it
+    // Try inserting with subscription_plan and agreed_to_terms
+    try {
+      await db.query(
+        `INSERT INTO seller_applications (user_id, business_name, business_description, business_address, business_phone, agreed_to_terms, subscription_plan)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [req.user.id, business_name.trim(), business_description.trim(), business_address.trim(), business_phone.trim(), 1, subscription_plan || 'basic']
+      );
+    } catch (insertErr) {
+      if (insertErr.code === 'ER_BAD_FIELD_ERROR') {
+        console.warn('Columns missing, inserting without them. Run schema update.');
+        await db.query(
+          `INSERT INTO seller_applications (user_id, business_name, business_description, business_address, business_phone)
+           VALUES (?, ?, ?, ?, ?)`,
+          [req.user.id, business_name.trim(), business_description.trim(), business_address.trim(), business_phone.trim()]
+        );
+      } else {
+        throw insertErr;
+      }
+    }
 
     res.status(201).json({ message: 'Seller application submitted successfully! Please wait for admin approval.' });
   } catch (err) {
-    console.error('Seller apply error:', err);
-    res.status(500).json({ message: 'Server error.' });
+    console.error('Seller apply error:', err.message, err.code, err.sqlMessage || '');
+    res.status(500).json({ message: 'Server error: ' + (err.sqlMessage || err.message) });
   }
 });
 
@@ -71,7 +86,7 @@ router.post('/apply', requireAuth, async (req, res) => {
 router.get('/application-status', requireAuth, async (req, res) => {
   try {
     const [applications] = await db.query(
-      'SELECT id, business_name, status, admin_notes, created_at, updated_at FROM seller_applications WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+      'SELECT id, business_name, status, subscription_plan, admin_notes, created_at, updated_at FROM seller_applications WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
       [req.user.id]
     );
 
@@ -115,6 +130,20 @@ router.post('/products', requireAuth, requireSeller, async (req, res) => {
       return res.status(400).json({ message: 'Stock must be a non-negative number.' });
     }
 
+    // Check plan limits
+    const [applications] = await db.query(
+      'SELECT subscription_plan FROM seller_applications WHERE user_id = ? AND status = "approved"',
+      [req.user.id]
+    );
+    const plan = applications.length > 0 ? applications[0].subscription_plan : 'basic';
+    
+    if (plan === 'basic') {
+      const [countResult] = await db.query('SELECT COUNT(*) as count FROM products WHERE seller_id = ?', [req.user.id]);
+      if (countResult[0].count >= 50) {
+        return res.status(403).json({ message: 'Basic plan is limited to 50 products. Please upgrade to add more.' });
+      }
+    }
+
     // Support both legacy single image and new multi-image array
     let imageData = null;
     if (images && Array.isArray(images)) {
@@ -132,9 +161,10 @@ router.post('/products', requireAuth, requireSeller, async (req, res) => {
       imageData = JSON.stringify([image]);
     }
 
+    // FIX: Added is_active = 1 so new products are visible on the public Products page
     const [result] = await db.query(
-      `INSERT INTO products (seller_id, name, description, price, stock, image, category)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (seller_id, name, description, price, stock, image, category, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
       [req.user.id, name.trim(), description.trim(), price, stock, imageData, category || 'General']
     );
 
@@ -321,6 +351,17 @@ router.get('/analytics', requireAuth, requireSeller, async (req, res) => {
   try {
     const sellerId = req.user.id;
 
+    // Check plan limits
+    const [applications] = await db.query(
+      'SELECT subscription_plan FROM seller_applications WHERE user_id = ? AND status = "approved"',
+      [sellerId]
+    );
+    const plan = applications.length > 0 ? applications[0].subscription_plan : 'basic';
+
+    if (plan === 'basic') {
+      return res.status(403).json({ message: 'Analytics are not available on the Basic plan. Please upgrade your subscription.' });
+    }
+
     // Total revenue from delivered orders
     const [revenueResult] = await db.query(
       `SELECT
@@ -401,6 +442,61 @@ router.get('/analytics', requireAuth, requireSeller, async (req, res) => {
     });
   } catch (err) {
     console.error('Get seller analytics error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// =============================================
+// SELLER SUBSCRIPTION UPGRADE
+// =============================================
+
+// PUT /api/seller/upgrade - Upgrade seller subscription plan
+router.put('/upgrade', requireAuth, requireSeller, async (req, res) => {
+  try {
+    const { plan } = req.body;
+    if (!['pro', 'enterprise'].includes(plan)) {
+      return res.status(400).json({ message: 'Invalid plan selected.' });
+    }
+
+    const [applications] = await db.query(
+      'SELECT id, subscription_plan FROM seller_applications WHERE user_id = ? AND status = "approved"',
+      [req.user.id]
+    );
+
+    if (applications.length === 0) {
+      return res.status(404).json({ message: 'Approved seller application not found.' });
+    }
+
+    if (applications[0].subscription_plan === plan) {
+      return res.status(400).json({ message: 'You are already on this plan.' });
+    }
+
+    await db.query(
+      'UPDATE seller_applications SET subscription_plan = ? WHERE id = ?',
+      [plan, applications[0].id]
+    );
+
+    res.json({ message: 'Subscription upgraded successfully!', plan });
+  } catch (err) {
+    console.error('Upgrade subscription error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// POST /api/seller/terminate - Terminate own seller subscription
+router.post('/terminate', requireAuth, requireSeller, async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+    // Update applications to rejected
+    await db.query("UPDATE seller_applications SET status = 'rejected', admin_notes = 'Terminated by seller' WHERE user_id = ?", [sellerId]);
+    // Update user role to user
+    await db.query("UPDATE users SET role = 'user' WHERE id = ?", [sellerId]);
+    // Deactivate products
+    await db.query("UPDATE products SET is_active = 0 WHERE seller_id = ?", [sellerId]);
+    
+    res.json({ message: 'Subscription terminated successfully.' });
+  } catch (err) {
+    console.error('Terminate subscription error:', err);
     res.status(500).json({ message: 'Server error.' });
   }
 });

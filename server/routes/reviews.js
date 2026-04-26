@@ -50,17 +50,13 @@ router.get('/can-review/:productId', requireAuth, async (req, res) => {
       return res.json({ canReview: false, reason: 'Only customers can write reviews.', eligibleOrders: [] });
     }
 
-    // Find delivered orders containing this product that the user hasn't reviewed yet
+    // Find delivered orders containing this product
     const [eligibleOrders] = await db.query(
       `SELECT o.id as order_id, o.created_at as order_date, oi.product_name
        FROM orders o
        JOIN order_items oi ON o.id = oi.order_id
-       WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 'delivered'
-       AND NOT EXISTS (
-         SELECT 1 FROM product_reviews pr
-         WHERE pr.user_id = ? AND pr.product_id = ? AND pr.order_id = o.id
-       )`,
-      [userId, productId, userId, productId]
+       WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 'delivered'`,
+      [userId, productId]
     );
 
     res.json({
@@ -91,51 +87,36 @@ router.post('/product/:productId', requireAuth, async (req, res) => {
       return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
     }
 
-    // Validate order_id
-    if (!order_id) {
-      return res.status(400).json({ message: 'Order ID is required.' });
+    // Validate review image format if provided
+    if (review_image && !isValidImageDataUri(review_image)) {
+      return res.status(400).json({ message: 'Review photo must be PNG or JPEG format.' });
     }
 
-    // Verify the order belongs to this user, contains this product, and is delivered
+    // Verify the user has a delivered order for this product
     const [orderCheck] = await db.query(
       `SELECT o.id FROM orders o
        JOIN order_items oi ON o.id = oi.order_id
-       WHERE o.id = ? AND o.user_id = ? AND oi.product_id = ? AND o.status = 'delivered'`,
-      [order_id, userId, productId]
+       WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 'delivered'
+       LIMIT 1`,
+      [userId, productId]
     );
 
     if (orderCheck.length === 0) {
       return res.status(400).json({ message: 'You can only review products from your delivered orders.' });
     }
 
-    // Check if already reviewed
-    const [existingReview] = await db.query(
-      'SELECT id FROM product_reviews WHERE user_id = ? AND product_id = ? AND order_id = ?',
-      [userId, productId, order_id]
-    );
-
-    if (existingReview.length > 0) {
-      return res.status(400).json({ message: 'You have already reviewed this product for this order.' });
-    }
-
-    // Validate review image format if provided
-    if (review_image && !isValidImageDataUri(review_image)) {
-      return res.status(400).json({ message: 'Review photo must be PNG or JPEG format.' });
-    }
+    const assignedOrderId = orderCheck[0].id;
 
     // Insert review
     await db.query(
       `INSERT INTO product_reviews (user_id, product_id, order_id, rating, comment, review_image)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, productId, order_id, rating, comment || null, review_image || null]
+      [userId, productId, assignedOrderId, rating, comment || null, review_image || null]
     );
 
     res.status(201).json({ message: 'Review submitted successfully!' });
   } catch (err) {
     console.error('Submit review error:', err);
-    if (err.code === 'ER_DUP_ENTRY') {
-      return res.status(400).json({ message: 'You have already reviewed this product for this order.' });
-    }
     res.status(500).json({ message: 'Server error.' });
   }
 });

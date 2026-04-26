@@ -4,6 +4,20 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
+// GET /api/admin/analytics
+router.get('/analytics', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const [[{ total_users }]] = await db.query('SELECT COUNT(*) as total_users FROM users');
+    const [[{ total_sellers }]] = await db.query('SELECT COUNT(*) as total_sellers FROM users WHERE role = ?', ['seller']);
+    const [[{ total_shops }]] = await db.query('SELECT COUNT(*) as total_shops FROM seller_applications WHERE status = ?', ['approved']);
+    
+    res.json({ analytics: { total_users, total_sellers, total_shops } });
+  } catch (err) {
+    console.error('Get analytics error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 // GET /api/admin/applications
 router.get('/applications', requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -43,6 +57,9 @@ router.put('/applications/:id', requireAuth, requireAdmin, async (req, res) => {
     // If approved, update user role to seller
     if (status === 'approved') {
       await db.query('UPDATE users SET role = ? WHERE id = ?', ['seller', apps[0].user_id]);
+    } else if (status === 'rejected') {
+      await db.query('UPDATE users SET role = ? WHERE id = ?', ['user', apps[0].user_id]);
+      await db.query('UPDATE products SET is_active = 0 WHERE seller_id = ?', [apps[0].user_id]);
     }
 
     res.json({ message: `Application ${status} successfully.` });

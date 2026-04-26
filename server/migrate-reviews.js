@@ -3,23 +3,22 @@ const db = require('./db');
 async function migrate() {
   try {
     await db.query(`
-      CREATE TABLE IF NOT EXISTS reviews (
+      CREATE TABLE IF NOT EXISTS product_reviews (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         product_id INT NOT NULL,
-        order_id INT NOT NULL,
+        order_id INT DEFAULT NULL,
         rating TINYINT NOT NULL,
         comment TEXT DEFAULT NULL,
-        image LONGTEXT DEFAULT NULL,
+        review_image LONGTEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_review (user_id, product_id, order_id)
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
-    console.log('Reviews table created successfully!');
+    console.log('Product reviews table created successfully!');
     process.exit(0);
   } catch (err) {
     console.error('Migration failed:', err.message);

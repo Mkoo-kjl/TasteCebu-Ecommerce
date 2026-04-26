@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
@@ -57,7 +59,10 @@ function StarDisplay({ rating, size = 14 }) {
 }
 
 export default function SellerDashboard() {
+  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('products');
+  const [sellerPlan, setSellerPlan] = useState('basic');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [analytics, setAnalytics] = useState(null);
@@ -67,6 +72,9 @@ export default function SellerDashboard() {
   const [form, setForm] = useState({ ...emptyProduct });
   const [saving, setSaving] = useState(false);
   const [orderFilter, setOrderFilter] = useState('all');
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradePlanSelected, setUpgradePlanSelected] = useState('pro');
+  const [upgrading, setUpgrading] = useState(false);
 
   const fetchProducts = async () => {
     try {
@@ -87,19 +95,33 @@ export default function SellerDashboard() {
   };
 
   const fetchAnalytics = async () => {
+    if (sellerPlan === 'basic') return;
     setLoading(true);
     try {
       const res = await api.get('/seller/analytics');
       setAnalytics(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      if (err.response?.status === 403) setAnalytics({ restricted: true });
+      else console.error(err); 
+    }
     finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await api.get('/seller/application-status');
+        if (res.data.application) setSellerPlan(res.data.application.subscription_plan);
+      } catch (err) {}
+    };
+    fetchStatus();
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'products') fetchProducts();
     else if (activeTab === 'orders') fetchOrders();
     else if (activeTab === 'analytics') fetchAnalytics();
-  }, [activeTab, orderFilter]);
+  }, [activeTab, orderFilter, sellerPlan]);
 
   const openCreateModal = () => {
     setEditingProduct(null);
@@ -200,6 +222,32 @@ export default function SellerDashboard() {
     }
   };
 
+  const handleTerminate = async () => {
+    if (!confirm('Are you sure you want to terminate your seller subscription? This will close your shop and deactivate your products.')) return;
+    try {
+      await api.post('/seller/terminate');
+      toast.success('Subscription terminated successfully.');
+      await refreshUser();
+      navigate('/');
+    } catch (err) {
+      toast.error('Termination failed.');
+    }
+  };
+
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      await api.put('/seller/upgrade', { plan: upgradePlanSelected });
+      toast.success(`Successfully upgraded to ${upgradePlanSelected.charAt(0).toUpperCase() + upgradePlanSelected.slice(1)} plan!`);
+      setSellerPlan(upgradePlanSelected);
+      setUpgradeModalOpen(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Upgrade failed.');
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
 
   return (
@@ -209,11 +257,25 @@ export default function SellerDashboard() {
           <h1>Seller Dashboard</h1>
           <p>Manage your products and orders</p>
         </div>
-        {activeTab === 'products' && (
-          <button className="btn btn-primary" onClick={openCreateModal} id="add-product-btn">
-            <FiPlus size={16} /> Add Product
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <span className="badge" style={{ background: '#3b82f6', color: '#fff', padding: '5px 10px', borderRadius: '12px', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+            {sellerPlan} Plan
+          </span>
+          {activeTab === 'products' && (
+            <button 
+              className="btn btn-primary" 
+              onClick={openCreateModal} 
+              id="add-product-btn"
+              disabled={sellerPlan === 'basic' && products.length >= 50}
+              title={sellerPlan === 'basic' && products.length >= 50 ? "Basic plan limit reached (50 products)" : ""}
+            >
+              <FiPlus size={16} /> Add Product
+            </button>
+          )}
+          <button className="btn btn-danger" onClick={handleTerminate}>
+            <FiX size={16} /> Terminate
           </button>
-        )}
+        </div>
       </div>
 
       <div className="tabs">
@@ -344,38 +406,47 @@ export default function SellerDashboard() {
       )}
 
       {/* ANALYTICS TAB */}
-      {activeTab === 'analytics' && analytics && (
+      {activeTab === 'analytics' && (
         <div className="analytics-section">
-          <div className="dashboard-stats analytics-stats">
-            <div className="stat-card stat-revenue">
-              <FiDollarSign size={24} />
-              <div>
-                <span className="stat-number">₱{analytics.summary.totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
-                <span className="stat-label">Total Revenue</span>
-              </div>
+          {sellerPlan === 'basic' ? (
+            <div className="empty-state">
+              <span className="empty-icon">🔒</span>
+              <h2>Analytics Restricted</h2>
+              <p>Analytics are not available on the Basic plan.</p>
+              <button className="btn btn-primary" onClick={() => setUpgradeModalOpen(true)}>Upgrade Subscription</button>
             </div>
-            <div className="stat-card stat-orders">
-              <FiShoppingCart size={24} />
-              <div>
-                <span className="stat-number">{analytics.summary.totalOrders}</span>
-                <span className="stat-label">Delivered Orders</span>
+          ) : analytics && !analytics.restricted ? (
+            <>
+              <div className="dashboard-stats analytics-stats">
+                <div className="stat-card stat-revenue">
+                  <FiDollarSign size={24} />
+                  <div>
+                    <span className="stat-number">₱{analytics.summary?.totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                    <span className="stat-label">Total Revenue</span>
+                  </div>
+                </div>
+                <div className="stat-card stat-orders">
+                  <FiShoppingCart size={24} />
+                  <div>
+                    <span className="stat-number">{analytics.summary?.totalOrders}</span>
+                    <span className="stat-label">Delivered Orders</span>
+                  </div>
+                </div>
+                <div className="stat-card stat-sold">
+                  <FiTrendingUp size={24} />
+                  <div>
+                    <span className="stat-number">{analytics.summary?.totalUnitsSold}</span>
+                    <span className="stat-label">Units Sold</span>
+                  </div>
+                </div>
+                <div className="stat-card stat-rating">
+                  <FiStar size={24} />
+                  <div>
+                    <span className="stat-number">{analytics.summary?.avgRating > 0 ? analytics.summary?.avgRating : '—'}</span>
+                    <span className="stat-label">Avg Rating ({analytics.summary?.totalReviews} reviews)</span>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="stat-card stat-sold">
-              <FiTrendingUp size={24} />
-              <div>
-                <span className="stat-number">{analytics.summary.totalUnitsSold}</span>
-                <span className="stat-label">Units Sold</span>
-              </div>
-            </div>
-            <div className="stat-card stat-rating">
-              <FiStar size={24} />
-              <div>
-                <span className="stat-number">{analytics.summary.avgRating > 0 ? analytics.summary.avgRating : '—'}</span>
-                <span className="stat-label">Avg Rating ({analytics.summary.totalReviews} reviews)</span>
-              </div>
-            </div>
-          </div>
 
           {/* Order Status Breakdown */}
           {analytics.statusBreakdown && analytics.statusBreakdown.length > 0 && (
@@ -443,6 +514,8 @@ export default function SellerDashboard() {
               </div>
             )}
           </div>
+          </>
+          ) : null}
         </div>
       )}
 
@@ -507,6 +580,52 @@ export default function SellerDashboard() {
           </button>
         </form>
       </Modal>
+
+      {/* UPGRADE MODAL */}
+      <Modal isOpen={upgradeModalOpen} onClose={() => setUpgradeModalOpen(false)} title="Upgrade Subscription">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px' }}>
+          <p>Choose a higher tier plan to unlock more features.</p>
+          
+          <div style={{ display: 'flex', gap: '20px', flexDirection: 'column' }}>
+            <div 
+              onClick={() => setUpgradePlanSelected('pro')}
+              style={{ padding: '20px', border: upgradePlanSelected === 'pro' ? '2px solid #3b82f6' : '2px solid var(--glass-border)', borderRadius: '12px', cursor: 'pointer', background: upgradePlanSelected === 'pro' ? 'rgba(59, 130, 246, 0.05)' : 'var(--card-bg)', position: 'relative' }}
+            >
+              <div style={{ position: 'absolute', top: '-10px', right: '15px', background: '#3b82f6', color: '#fff', fontSize: '10px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>POPULAR</div>
+              <h3 style={{ margin: 0, color: '#3b82f6' }}>Pro Plan</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '5px 0 10px 0' }}>₱499 <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>/ month</span></div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.9rem' }}>
+                <li>✓ Unlimited Products</li>
+                <li>✓ Advanced Analytics</li>
+                <li>✓ Priority Support</li>
+              </ul>
+            </div>
+
+            <div 
+              onClick={() => setUpgradePlanSelected('enterprise')}
+              style={{ padding: '20px', border: upgradePlanSelected === 'enterprise' ? '2px solid #f59e0b' : '2px solid var(--glass-border)', borderRadius: '12px', cursor: 'pointer', background: upgradePlanSelected === 'enterprise' ? 'rgba(245, 158, 11, 0.05)' : 'var(--card-bg)' }}
+            >
+              <h3 style={{ margin: 0, color: '#f59e0b' }}>Enterprise Plan</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '5px 0 10px 0' }}>₱999 <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>/ month</span></div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.9rem' }}>
+                <li>✓ Unlimited Everything</li>
+                <li>✓ Custom Shop Design</li>
+                <li>✓ Dedicated Account Manager</li>
+              </ul>
+            </div>
+          </div>
+
+          <button 
+            className="btn btn-primary btn-full" 
+            style={{ marginTop: '10px', padding: '15px' }} 
+            onClick={handleUpgrade}
+            disabled={upgrading}
+          >
+            {upgrading ? 'Upgrading...' : `Pay ₱${upgradePlanSelected === 'pro' ? '499' : '999'} & Upgrade`}
+          </button>
+        </div>
+      </Modal>
+
     </div>
   );
 }
