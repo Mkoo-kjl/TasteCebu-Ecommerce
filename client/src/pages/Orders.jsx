@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiPackage, FiClock, FiTruck, FiCheckCircle, FiXCircle, FiStar } from 'react-icons/fi';
+import { FiPackage, FiClock, FiTruck, FiCheckCircle, FiXCircle, FiStar, FiFileText } from 'react-icons/fi';
 
 const STATUS_CONFIG = {
   pending: { icon: <FiClock />, color: '#f59e0b', label: 'Pending' },
@@ -128,6 +128,11 @@ export default function Orders() {
                     <span className="order-total">Total: ₱{Number(order.total_amount).toFixed(2)}</span>
                     {order.status === 'pending' && (
                       <button className="btn btn-danger btn-sm" onClick={() => cancelOrder(order.id)}>Cancel Order</button>
+                    )}
+                    {order.status === 'delivered' && (
+                      <Link to={`/orders/${order.id}/receipt`} className="btn btn-sm btn-receipt" id={`receipt-btn-${order.id}`}>
+                        <FiFileText size={13} /> View Receipt
+                      </Link>
                     )}
                   </div>
                 </div>

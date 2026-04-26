@@ -56,6 +56,7 @@ export default function SellerApply() {
 
   useEffect(() => {
     if (user?.role === 'seller') { navigate('/seller/dashboard'); return; }
+    if (user?.role === 'admin') { navigate('/admin'); return; }
     const fetchStatus = async () => {
       try {
         const res = await api.get('/seller/application-status');

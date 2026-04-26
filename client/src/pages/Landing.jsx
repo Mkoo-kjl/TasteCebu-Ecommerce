@@ -1,9 +1,28 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../utils/api';
 import { FiArrowRight, FiShoppingBag, FiTruck, FiShield } from 'react-icons/fi';
 
 export default function Landing() {
   const { user } = useAuth();
+  const [hasApplication, setHasApplication] = useState(false);
+
+  // Check if user already has a pending/approved seller application
+  useEffect(() => {
+    if (user && user.role === 'user') {
+      api.get('/seller/application-status')
+        .then(res => {
+          if (res.data.application && (res.data.application.status === 'pending' || res.data.application.status === 'approved')) {
+            setHasApplication(true);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user]);
+
+  // Only show the "Apply as Seller" CTA to regular users without a pending/approved application
+  const showSellerCTA = !user || (user.role === 'user' && !hasApplication);
 
   return (
     <div className="landing-page" id="landing-page">
@@ -55,17 +74,19 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="cta-section">
-        <div className="cta-content">
-          <h2>Become a Seller</h2>
-          <p>Share your Cebuano products with the world. Join our marketplace and start selling today.</p>
-          {user ? (
-            <Link to="/seller/apply" className="btn btn-primary btn-lg">Apply Now</Link>
-          ) : (
-            <Link to="/register" className="btn btn-primary btn-lg">Get Started</Link>
-          )}
-        </div>
-      </section>
+      {showSellerCTA && (
+        <section className="cta-section">
+          <div className="cta-content">
+            <h2>Become a Seller</h2>
+            <p>Share your Cebuano products with the world. Join our marketplace and start selling today.</p>
+            {user ? (
+              <Link to="/seller/apply" className="btn btn-primary btn-lg">Apply Now</Link>
+            ) : (
+              <Link to="/register" className="btn btn-primary btn-lg">Get Started</Link>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiDollarSign, FiBox, FiShoppingBag, FiX, FiImage,
-  FiClock, FiTruck, FiCheckCircle, FiXCircle, FiBarChart2, FiStar, FiTrendingUp, FiShoppingCart } from 'react-icons/fi';
+  FiClock, FiTruck, FiCheckCircle, FiXCircle, FiBarChart2, FiStar, FiTrendingUp, FiShoppingCart, FiFileText } from 'react-icons/fi';
 
 const CATEGORIES = ['Dried Fruits', 'Meat & Lechon', 'Pastries & Bread', 'Snacks', 'Beverages', 'Condiments', 'Seafood', 'Sweets', 'General'];
 const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -404,7 +404,14 @@ export default function SellerDashboard() {
                     </div>
                     <div className="order-footer">
                       <span>📍 {order.shipping_address}</span>
-                      <span className="order-total">Your Total: ₱{Number(order.seller_total).toFixed(2)}</span>
+                      <div className="order-total-row">
+                        <span className="order-total">Your Total: ₱{Number(order.seller_total).toFixed(2)}</span>
+                        {order.status === 'delivered' && (
+                          <Link to={`/orders/${order.id}/receipt`} className="btn btn-sm btn-receipt" id={`seller-receipt-btn-${order.id}`}>
+                            <FiFileText size={13} /> View Receipt
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

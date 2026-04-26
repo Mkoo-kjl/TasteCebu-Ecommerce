@@ -7,18 +7,23 @@ const router = express.Router();
 // POST /api/orders - Place order from cart (customers only)
 router.post('/', requireAuth, requireCustomer, async (req, res) => {
   try {
-    const { shipping_address } = req.body;
+    const { shipping_address, cart_item_ids } = req.body;
     if (!shipping_address) return res.status(400).json({ message: 'Shipping address is required.' });
 
-    // Get cart items
-    const [cartItems] = await db.query(
-      `SELECT ci.id, ci.quantity, p.id as product_id, p.name, p.price, p.image, p.stock
+    // Get cart items - optionally filtered by selected IDs
+    let cartQuery = `SELECT ci.id, ci.quantity, p.id as product_id, p.name, p.price, p.image, p.stock
        FROM cart_items ci JOIN products p ON ci.product_id = p.id
-       WHERE ci.user_id = ? AND p.is_active = 1`,
-      [req.user.id]
-    );
+       WHERE ci.user_id = ? AND p.is_active = 1`;
+    const queryParams = [req.user.id];
 
-    if (cartItems.length === 0) return res.status(400).json({ message: 'Your cart is empty.' });
+    if (cart_item_ids && Array.isArray(cart_item_ids) && cart_item_ids.length > 0) {
+      cartQuery += ` AND ci.id IN (${cart_item_ids.map(() => '?').join(',')})`;
+      queryParams.push(...cart_item_ids);
+    }
+
+    const [cartItems] = await db.query(cartQuery, queryParams);
+
+    if (cartItems.length === 0) return res.status(400).json({ message: 'No valid items selected for checkout.' });
 
     // Validate stock
     for (const item of cartItems) {
@@ -45,8 +50,9 @@ router.post('/', requireAuth, requireCustomer, async (req, res) => {
       await db.query('UPDATE products SET stock = stock - ? WHERE id = ?', [item.quantity, item.product_id]);
     }
 
-    // Clear cart
-    await db.query('DELETE FROM cart_items WHERE user_id = ?', [req.user.id]);
+    // Remove only the checked-out items from cart (not the entire cart)
+    const checkedOutIds = cartItems.map(i => i.id);
+    await db.query(`DELETE FROM cart_items WHERE id IN (${checkedOutIds.map(() => '?').join(',')}) AND user_id = ?`, [...checkedOutIds, req.user.id]);
 
     res.status(201).json({ message: 'Order placed successfully!', order_id: orderId });
   } catch (err) {
@@ -79,6 +85,96 @@ router.get('/', requireAuth, async (req, res) => {
     res.json({ orders });
   } catch (err) {
     console.error('Get orders error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// GET /api/orders/:id/receipt - Get receipt for a delivered order (customer or seller)
+// NOTE: This route MUST come before /:id to avoid Express matching 'receipt' as an ID
+router.get('/:id/receipt', requireAuth, async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    // Get order details
+    const [orders] = await db.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (orders.length === 0) return res.status(404).json({ message: 'Order not found.' });
+    const order = orders[0];
+
+    // Only allow receipt for delivered orders
+    if (order.status !== 'delivered') {
+      return res.status(400).json({ message: 'Receipt is only available for delivered orders.' });
+    }
+
+    // Get order items with seller info
+    const [items] = await db.query(
+      `SELECT oi.*, p.seller_id
+       FROM order_items oi
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE oi.order_id = ?`,
+      [orderId]
+    );
+
+    // Check access: either the customer or a seller with products in this order
+    const isCustomer = order.user_id === req.user.id;
+    const sellerIds = [...new Set(items.map(i => i.seller_id).filter(Boolean))];
+    const isSeller = sellerIds.includes(req.user.id);
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isCustomer && !isSeller && !isAdmin) {
+      return res.status(403).json({ message: 'You do not have access to this receipt.' });
+    }
+
+    // Get customer info
+    const [customers] = await db.query('SELECT name, email, phone FROM users WHERE id = ?', [order.user_id]);
+    const customer = customers[0] || {};
+
+    // Get seller/shop info for each unique seller
+    const shops = [];
+    for (const sellerId of sellerIds) {
+      const [sellerInfo] = await db.query(
+        `SELECT u.name as seller_name, sa.business_name, sa.business_address, sa.business_phone
+         FROM users u
+         LEFT JOIN seller_applications sa ON u.id = sa.user_id AND sa.status = 'approved'
+         WHERE u.id = ?`,
+        [sellerId]
+      );
+      if (sellerInfo.length > 0) shops.push(sellerInfo[0]);
+    }
+
+    // If seller is viewing, only show their items
+    let receiptItems = items;
+    if (isSeller && !isCustomer && !isAdmin) {
+      receiptItems = items.filter(i => i.seller_id === req.user.id);
+    }
+
+    const receiptTotal = receiptItems.reduce((sum, item) => sum + (item.product_price * item.quantity), 0);
+
+    res.json({
+      receipt: {
+        order_id: order.id,
+        order_date: order.created_at,
+        delivery_date: order.updated_at,
+        status: order.status,
+        shipping_address: order.shipping_address,
+        total_amount: isCustomer || isAdmin ? Number(order.total_amount) : receiptTotal,
+        customer: {
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+        },
+        shops,
+        items: receiptItems.map(item => ({
+          id: item.id,
+          product_name: item.product_name,
+          product_price: Number(item.product_price),
+          product_image: item.product_image,
+          quantity: item.quantity,
+          subtotal: Number(item.product_price) * item.quantity,
+        })),
+      }
+    });
+  } catch (err) {
+    console.error('Get receipt error:', err);
     res.status(500).json({ message: 'Server error.' });
   }
 });

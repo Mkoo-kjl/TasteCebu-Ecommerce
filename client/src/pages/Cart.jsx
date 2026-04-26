@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiTrash2, FiMinus, FiPlus, FiShoppingBag } from 'react-icons/fi';
+import { FiTrash2, FiMinus, FiPlus, FiShoppingBag, FiCheckSquare, FiSquare } from 'react-icons/fi';
 
 // Helper to get the first image from JSON array or legacy string
 function getFirstImage(imageField) {
@@ -22,6 +22,7 @@ export default function Cart() {
   const [loading, setLoading] = useState(true);
   const [address, setAddress] = useState('');
   const [placing, setPlacing] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const navigate = useNavigate();
 
   const fetchCart = async () => {
@@ -29,6 +30,16 @@ export default function Cart() {
       const res = await api.get('/cart');
       setItems(res.data.items);
       setTotal(res.data.total);
+      // Select all items by default on first load
+      setSelectedIds(prev => {
+        if (prev.size === 0 && res.data.items.length > 0) {
+          return new Set(res.data.items.map(i => i.id));
+        }
+        // Keep existing selections, remove any that no longer exist
+        const validIds = new Set(res.data.items.map(i => i.id));
+        const updated = new Set([...prev].filter(id => validIds.has(id)));
+        return updated;
+      });
     } catch (err) {
       console.error('Failed to load cart');
     } finally {
@@ -51,17 +62,51 @@ export default function Cart() {
     try {
       await api.delete(`/cart/${id}`);
       toast.success('Item removed');
+      setSelectedIds(prev => {
+        const updated = new Set(prev);
+        updated.delete(id);
+        return updated;
+      });
       fetchCart();
     } catch (err) {
       toast.error('Failed to remove item');
     }
   };
 
+  const toggleItem = (id) => {
+    setSelectedIds(prev => {
+      const updated = new Set(prev);
+      if (updated.has(id)) {
+        updated.delete(id);
+      } else {
+        updated.add(id);
+      }
+      return updated;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map(i => i.id)));
+    }
+  };
+
+  // Calculate selected items totals
+  const selectedItems = items.filter(i => selectedIds.has(i.id));
+  const selectedTotal = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const selectedCount = selectedItems.length;
+
   const placeOrder = async () => {
     if (!address.trim()) return toast.error('Please enter a shipping address');
+    if (selectedCount === 0) return toast.error('Please select at least one item to checkout');
     setPlacing(true);
     try {
-      const res = await api.post('/orders', { shipping_address: address });
+      const res = await api.post('/orders', {
+        shipping_address: address,
+        cart_item_ids: [...selectedIds],
+      });
       toast.success(res.data.message);
       navigate('/orders');
     } catch (err) {
@@ -72,6 +117,9 @@ export default function Cart() {
   };
 
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
+
+  const allSelected = items.length > 0 && selectedIds.size === items.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < items.length;
 
   return (
     <div className="cart-page" id="cart-page">
@@ -90,10 +138,30 @@ export default function Cart() {
       ) : (
         <div className="cart-layout">
           <div className="cart-items">
+            {/* Select All Header */}
+            <div className="cart-select-all" id="cart-select-all">
+              <label className="cart-checkbox-label" onClick={toggleAll}>
+                <span className={`cart-checkbox ${allSelected ? 'checked' : ''} ${someSelected ? 'partial' : ''}`}>
+                  {allSelected ? <FiCheckSquare size={20} /> : <FiSquare size={20} />}
+                </span>
+                <span className="cart-select-text">
+                  {allSelected ? 'Deselect All' : 'Select All'} ({selectedIds.size}/{items.length})
+                </span>
+              </label>
+            </div>
+
             {items.map(item => {
               const itemImage = getFirstImage(item.image);
+              const isSelected = selectedIds.has(item.id);
               return (
-                <div className="cart-item" key={item.id} id={`cart-item-${item.id}`}>
+                <div className={`cart-item ${isSelected ? 'cart-item-selected' : ''}`} key={item.id} id={`cart-item-${item.id}`}>
+                  {/* Checkbox */}
+                  <label className="cart-item-checkbox" onClick={() => toggleItem(item.id)}>
+                    <span className={`cart-checkbox ${isSelected ? 'checked' : ''}`}>
+                      {isSelected ? <FiCheckSquare size={20} /> : <FiSquare size={20} />}
+                    </span>
+                  </label>
+
                   <div className="cart-item-image">
                     {itemImage ? <img src={itemImage} alt={item.name} /> : <div className="product-placeholder-sm">🍽️</div>}
                   </div>
@@ -118,26 +186,36 @@ export default function Cart() {
 
           <div className="cart-summary">
             <h3>Order Summary</h3>
-            <div className="summary-row">
-              <span>Subtotal ({items.length} items)</span>
-              <span>₱{Number(total).toFixed(2)}</span>
-            </div>
-            <div className="summary-row">
-              <span>Shipping</span>
-              <span className="free-shipping">Free</span>
-            </div>
-            <div className="summary-divider"></div>
-            <div className="summary-row total">
-              <span>Total</span>
-              <span>₱{Number(total).toFixed(2)}</span>
-            </div>
+            {selectedCount === 0 ? (
+              <div className="cart-no-selection">
+                <p>No items selected</p>
+                <p className="text-muted">Select items to see order summary</p>
+              </div>
+            ) : (
+              <>
+                <div className="summary-row">
+                  <span>Selected ({selectedCount} item{selectedCount !== 1 ? 's' : ''})</span>
+                  <span>₱{selectedTotal.toFixed(2)}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Shipping</span>
+                  <span className="free-shipping">Free</span>
+                </div>
+                <div className="summary-divider"></div>
+                <div className="summary-row total">
+                  <span>Total</span>
+                  <span>₱{selectedTotal.toFixed(2)}</span>
+                </div>
+              </>
+            )}
             <div className="form-group">
               <label htmlFor="shipping-address">Shipping Address</label>
               <textarea id="shipping-address" placeholder="Enter your full delivery address" value={address}
                 onChange={(e) => setAddress(e.target.value)} rows={3}></textarea>
             </div>
-            <button className="btn btn-primary btn-full" onClick={placeOrder} disabled={placing} id="place-order-btn">
-              <FiShoppingBag size={16} /> {placing ? 'Placing Order...' : 'Place Order'}
+            <button className="btn btn-primary btn-full" onClick={placeOrder}
+              disabled={placing || selectedCount === 0} id="place-order-btn">
+              <FiShoppingBag size={16} /> {placing ? 'Placing Order...' : selectedCount === 0 ? 'Select Items to Checkout' : `Checkout ${selectedCount} Item${selectedCount !== 1 ? 's' : ''}`}
             </button>
           </div>
         </div>

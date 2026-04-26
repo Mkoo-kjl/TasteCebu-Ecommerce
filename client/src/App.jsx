@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import SellerApply from './pages/SellerApply';
 import SellerDashboard from './pages/SellerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Receipt from './pages/Receipt';
 import Settings from './pages/Settings';
 import './App.css';
 
@@ -36,6 +37,7 @@ function App() {
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+          <Route path="/orders/:id/receipt" element={<ProtectedRoute><Receipt /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/seller/apply" element={<ProtectedRoute><SellerApply /></ProtectedRoute>} />
