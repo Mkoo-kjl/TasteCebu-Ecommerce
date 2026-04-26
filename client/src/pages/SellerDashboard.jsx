@@ -140,28 +140,37 @@ export default function SellerDashboard() {
   };
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (form.images.length + files.length > 10) {
-      return toast.error('Maximum 10 images allowed');
+  const files = Array.from(e.target.files);
+  if (form.images.length + files.length > 10) {
+    return toast.error('Maximum 10 images allowed');
+  }
+
+  files.forEach(file => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return toast.error(`${file.name}: Only PNG and JPEG allowed.`);
     }
-    files.forEach(file => {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error(`${file.name} is not a valid format. Only PNG and JPEG allowed.`);
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name} exceeds 50MB limit`);
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm(prev => ({ ...prev, images: [...prev.images, reader.result] }));
-      };
-      reader.readAsDataURL(file);
-    });
-    // Reset input so same file can be re-selected
-    e.target.value = '';
-  };
+    if (file.size > MAX_FILE_SIZE) {
+      return toast.error(`${file.name} exceeds 50MB limit`);
+    }
+
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 800; // 800px max for product images
+      const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL('image/jpeg', 0.75);
+      setForm(prev => ({ ...prev, images: [...prev.images, compressed] }));
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+
+  e.target.value = '';
+};
 
   const removeImage = (index) => {
     setForm(prev => ({

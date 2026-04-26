@@ -21,15 +21,25 @@ export default function Profile() {
   }, [user]);
 
   const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const allowedTypes = ['image/png', 'image/jpeg'];
-    if (!allowedTypes.includes(file.type)) return toast.error('Only PNG and JPEG images are allowed');
-    if (file.size > 50 * 1024 * 1024) return toast.error('Image must be under 50MB');
-    const reader = new FileReader();
-    reader.onloadend = () => setAvatar(reader.result);
-    reader.readAsDataURL(file);
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!['image/png', 'image/jpeg'].includes(file.type)) return toast.error('Only PNG and JPEG allowed');
+  if (file.size > 50 * 1024 * 1024) return toast.error('Image must be under 50MB');
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    const MAX = 256; // profile pic — 256px is plenty
+    const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    setAvatar(canvas.toDataURL('image/jpeg', 0.8)); // ~15–30KB base64
+    URL.revokeObjectURL(url);
   };
+  img.src = url;
+};
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
