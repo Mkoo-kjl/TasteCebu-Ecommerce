@@ -10,8 +10,63 @@ router.get('/analytics', requireAuth, requireAdmin, async (req, res) => {
     const [[{ total_users }]] = await db.query('SELECT COUNT(*) as total_users FROM users');
     const [[{ total_sellers }]] = await db.query('SELECT COUNT(*) as total_sellers FROM users WHERE role = ?', ['seller']);
     const [[{ total_shops }]] = await db.query('SELECT COUNT(*) as total_shops FROM seller_applications WHERE status = ?', ['approved']);
+    const [[{ total_applicants }]] = await db.query('SELECT COUNT(*) as total_applicants FROM seller_applications');
+
+    // Calculate Monthly Recurring Revenue (MRR) from active seller subscriptions
+    // Basic: ₱0, Pro: ₱499, Enterprise: ₱999
+    const [[{ total_revenue }]] = await db.query(`
+      SELECT SUM(
+        CASE 
+          WHEN subscription_plan = 'pro' THEN 499 
+          WHEN subscription_plan = 'enterprise' THEN 999 
+          ELSE 0 
+        END
+      ) as total_revenue 
+      FROM seller_applications 
+      WHERE status = 'approved'
+    `);
     
-    res.json({ analytics: { total_users, total_sellers, total_shops } });
+    // Seller applicants over time (last 30 days)
+    const [applicants_by_date] = await db.query(`
+      SELECT DATE(created_at) as date, COUNT(id) as count 
+      FROM seller_applications 
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      GROUP BY DATE(created_at) 
+      ORDER BY date ASC
+    `);
+
+    // User registrations over last 30 days
+    const [users_by_date] = await db.query(`
+      SELECT DATE(created_at) as date, COUNT(*) as count 
+      FROM users 
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      GROUP BY DATE(created_at) 
+      ORDER BY date ASC
+    `);
+
+    // Seller applications breakdown by status
+    const [applications_by_status] = await db.query(`
+      SELECT status, COUNT(*) as count 
+      FROM seller_applications 
+      GROUP BY status
+    `);
+
+    // Subscriptions by plan
+    const [subscriptions_by_plan] = await db.query('SELECT subscription_plan, COUNT(*) as count FROM seller_applications WHERE status = "approved" GROUP BY subscription_plan');
+
+    res.json({ 
+      analytics: { 
+        total_users, 
+        total_sellers, 
+        total_shops,
+        total_applicants,
+        total_revenue: total_revenue || 0,
+        applicants_by_date,
+        users_by_date,
+        applications_by_status,
+        subscriptions_by_plan
+      } 
+    });
   } catch (err) {
     console.error('Get analytics error:', err);
     res.status(500).json({ message: 'Server error.' });

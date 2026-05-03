@@ -1,15 +1,34 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiUsers, FiFileText, FiPackage, FiCheck, FiX, FiClock, FiTruck, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity } from 'react-icons/fi';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  Filler
+} from 'chart.js';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
-const STATUS_CONFIG = {
-  pending: { icon: <FiClock />, color: '#f59e0b', label: 'Pending' },
-  processing: { icon: <FiPackage />, color: '#3b82f6', label: 'Processing' },
-  shipped: { icon: <FiTruck />, color: '#8b5cf6', label: 'Shipped' },
-  delivered: { icon: <FiCheckCircle />, color: '#10b981', label: 'Delivered' },
-  cancelled: { icon: <FiXCircle />, color: '#ef4444', label: 'Cancelled' },
-};
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  Filler
+);
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -51,16 +70,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const pendingApplicants = applications.filter(a => a.status === 'pending').length;
+
   return (
     <div className="admin-dashboard" id="admin-dashboard">
       <div className="page-header">
-        <h1>Admin Dashboard</h1>
-        <p>Manage the TasteCebu platform</p>
+        <div>
+          <h1>Admin Dashboard</h1>
+          <p>Manage the TasteCebu platform</p>
+        </div>
       </div>
 
       <div className="tabs">
         <button className={`tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
-          <FiCheckCircle size={14} /> Analytics
+          <FiActivity size={14} /> Analytics
         </button>
         <button className={`tab ${activeTab === 'applications' ? 'active' : ''}`} onClick={() => setActiveTab('applications')}>
           <FiFileText size={14} /> Applications
@@ -74,6 +97,139 @@ export default function AdminDashboard() {
         <div className="loading-screen"><div className="spinner"></div></div>
       ) : (
         <>
+          {activeTab === 'analytics' && analytics && (
+            <div className="admin-section">
+              <div className="admin-analytics-grid">
+                {/* Subscription Revenue */}
+                <div className="admin-kpi-card kpi-revenue">
+                  <div className="kpi-icon-wrap kpi-icon-green">
+                    <FiDollarSign size={24} />
+                  </div>
+                  <div className="kpi-info">
+                    <span className="kpi-label">Subscription Revenue</span>
+                    <span className="kpi-value">₱{Number(analytics.total_revenue || 0).toLocaleString()}</span>
+                    <span className="kpi-sub">From seller subscriptions</span>
+                  </div>
+                </div>
+
+                {/* Seller Applicants */}
+                <div className="admin-kpi-card kpi-applicants">
+                  <div className="kpi-icon-wrap kpi-icon-blue">
+                    <FiUserPlus size={24} />
+                  </div>
+                  <div className="kpi-info">
+                    <span className="kpi-label">Seller Applicants</span>
+                    <span className="kpi-value">{analytics.total_applicants || 0}</span>
+                    <span className="kpi-sub">Users applied to be sellers</span>
+                  </div>
+                </div>
+
+                {/* Total Users */}
+                <div className="admin-kpi-card kpi-users">
+                  <div className="kpi-icon-wrap kpi-icon-amber">
+                    <FiUsers size={24} />
+                  </div>
+                  <div className="kpi-info">
+                    <span className="kpi-label">Total Users</span>
+                    <span className="kpi-value">{analytics.total_users || 0}</span>
+                    <span className="kpi-sub">Registered on the platform</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* User Growth Trend Chart */}
+              <div className="admin-chart-row">
+                <div className="admin-chart-card card">
+                  <h3>User Growth (Last 30 Days)</h3>
+                  <div className="admin-chart-wrap">
+                    <Line
+                      data={{
+                        labels: (analytics.users_by_date || []).map(d => new Date(d.date).toLocaleDateString()),
+                        datasets: [
+                          {
+                            label: 'New Users',
+                            data: (analytics.users_by_date || []).map(d => d.count),
+                            borderColor: '#c2630a',
+                            backgroundColor: 'rgba(194, 99, 10, 0.08)',
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#c2630a',
+                          }
+                        ]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                          y: { type: 'linear', display: true, position: 'left' }
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Charts Grid */}
+              <div className="admin-charts-grid">
+                <div className="admin-chart-card card">
+                  <h3>Seller Applications Trend</h3>
+                  <div className="admin-chart-wrap-sm">
+                    <Line
+                      data={{
+                        labels: (analytics.applicants_by_date || []).map(d => new Date(d.date).toLocaleDateString()),
+                        datasets: [{
+                          label: 'New Applicants',
+                          data: (analytics.applicants_by_date || []).map(d => d.count),
+                          borderColor: '#2563eb',
+                          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                          fill: true,
+                          tension: 0.3,
+                          pointBackgroundColor: '#2563eb',
+                        }]
+                      }}
+                      options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }}
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-chart-card card">
+                  <h3>Application Status</h3>
+                  <div className="admin-chart-wrap-sm">
+                    <Doughnut
+                      data={{
+                        labels: (analytics.applications_by_status || []).map(s => s.status.charAt(0).toUpperCase() + s.status.slice(1)),
+                        datasets: [{
+                          data: (analytics.applications_by_status || []).map(s => s.count),
+                          backgroundColor: ['#b07d04', '#1a8a4a', '#c42b2b'],
+                        }]
+                      }}
+                      options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }}
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-chart-card card">
+                  <h3>Seller Subscriptions</h3>
+                  <div className="admin-chart-wrap-sm">
+                    <Bar
+                      data={{
+                        labels: (analytics.subscriptions_by_plan || []).map(s => s.subscription_plan),
+                        datasets: [{
+                          label: 'Active Shops',
+                          data: (analytics.subscriptions_by_plan || []).map(s => s.count),
+                          backgroundColor: '#c2630a',
+                          borderRadius: 6,
+                        }]
+                      }}
+                      options={{ responsive: true, maintainAspectRatio: false }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'applications' && (
             <div className="admin-section">
               {applications.length === 0 ? (
@@ -148,25 +304,6 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'analytics' && analytics && (
-            <div className="admin-section">
-              <div className="analytics-dashboard" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-                <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <h3 style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '10px' }}>Total Shops</h3>
-                  <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#10b981' }}>{analytics.total_shops}</div>
-                </div>
-                <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <h3 style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '10px' }}>Total Sellers</h3>
-                  <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#3b82f6' }}>{analytics.total_sellers}</div>
-                </div>
-                <div className="stat-card" style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <h3 style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '10px' }}>Total Users</h3>
-                  <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#f59e0b' }}>{analytics.total_users}</div>
-                </div>
               </div>
             </div>
           )}
