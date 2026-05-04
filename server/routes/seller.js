@@ -488,7 +488,7 @@ router.post('/terminate', requireAuth, requireSeller, async (req, res) => {
   try {
     const sellerId = req.user.id;
     // Update applications to rejected
-    await db.query("UPDATE seller_applications SET status = 'rejected', admin_notes = 'Terminated by seller' WHERE user_id = ?", [sellerId]);
+    await db.query("UPDATE seller_applications SET status = 'terminated', admin_notes = 'Terminated by seller' WHERE user_id = ?", [sellerId]);
     // Update user role to user
     await db.query("UPDATE users SET role = 'user' WHERE id = ?", [sellerId]);
     // Deactivate products

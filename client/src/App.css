@@ -802,6 +802,7 @@
 .kpi-revenue::before { background: linear-gradient(180deg, #1a8a4a, #15703c); }
 .kpi-applicants::before { background: linear-gradient(180deg, #2563eb, #1d4ed8); }
 .kpi-users::before { background: linear-gradient(180deg, #c2630a, #a85408); }
+.kpi-terminated::before { background: linear-gradient(180deg, #7c3aed, #6d28d9); }
 .kpi-icon-wrap {
   width: 52px; height: 52px;
   border-radius: var(--radius-md);
@@ -811,12 +812,15 @@
 .kpi-icon-green { background: rgba(26, 138, 74, 0.1); color: #1a8a4a; }
 .kpi-icon-blue { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
 .kpi-icon-amber { background: rgba(194, 99, 10, 0.1); color: #c2630a; }
+.kpi-icon-red { background: rgba(124, 58, 237, 0.1); color: #7c3aed; }
 [data-theme="dark"] .kpi-icon-green { background: rgba(48, 216, 136, 0.1); color: #30d888; }
 [data-theme="dark"] .kpi-icon-blue { background: rgba(96, 160, 255, 0.1); color: #60a0ff; }
 [data-theme="dark"] .kpi-icon-amber { background: rgba(232, 146, 14, 0.1); color: #e8920e; }
+[data-theme="dark"] .kpi-icon-red { background: rgba(167, 139, 250, 0.1); color: #a78bfa; }
 [data-theme="dark"] .kpi-revenue::before { background: linear-gradient(180deg, #30d888, #22a858); }
 [data-theme="dark"] .kpi-applicants::before { background: linear-gradient(180deg, #60a0ff, #4080e0); }
 [data-theme="dark"] .kpi-users::before { background: linear-gradient(180deg, #e8920e, #d07a08); }
+[data-theme="dark"] .kpi-terminated::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
 .kpi-info { display: flex; flex-direction: column; gap: 2px; }
 .kpi-label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .kpi-value { font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
@@ -829,6 +833,15 @@
 
 /* ========== ADMIN CHART CONTAINERS ========== */
 .admin-chart-row { margin-bottom: 24px; }
+.admin-chart-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+@media (max-width: 992px) {
+  .admin-chart-row-grid { grid-template-columns: 1fr; }
+}
 .admin-charts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

@@ -95,14 +95,14 @@ export default function SellerApply() {
 
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
 
-  // Show status if application exists
   if (application) {
     const statusConfig = {
       pending: { icon: <FiClock size={40} />, color: '#f59e0b', title: 'Application Pending', desc: 'Your seller application is being reviewed by our admin team.' },
       rejected: { icon: <FiX size={40} />, color: '#ef4444', title: 'Application Rejected', desc: application.admin_notes || 'Your application was not approved. You may submit a new application.' },
+      terminated: { icon: <FiX size={40} />, color: '#7c3aed', title: 'Subscription Terminated', desc: application.admin_notes || 'Your seller subscription has been terminated. You may submit a new application to rejoin.' },
     };
     const config = statusConfig[application.status];
-    if (!config) return null;
+    if (!config) return <div className="loading-screen"><div className="spinner"></div></div>;
 
     return (
       <div className="seller-apply-page" id="seller-apply-page">
@@ -110,8 +110,8 @@ export default function SellerApply() {
           <div className="status-icon" style={{ color: config.color }}>{config.icon}</div>
           <h2>{config.title}</h2>
           <p>{config.desc}</p>
-          <p className="status-meta">Submitted: {new Date(application.created_at).toLocaleDateString()}</p>
-          {application.status === 'rejected' && (
+          <p className="status-meta">Last Updated: {new Date(application.updated_at || application.created_at).toLocaleDateString()}</p>
+          {(application.status === 'rejected' || application.status === 'terminated') && (
             <button className="btn btn-primary" onClick={() => setApplication(null)}>Submit New Application</button>
           )}
         </div>

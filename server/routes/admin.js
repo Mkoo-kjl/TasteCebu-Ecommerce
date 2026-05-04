@@ -10,7 +10,8 @@ router.get('/analytics', requireAuth, requireAdmin, async (req, res) => {
     const [[{ total_users }]] = await db.query('SELECT COUNT(*) as total_users FROM users');
     const [[{ total_sellers }]] = await db.query('SELECT COUNT(*) as total_sellers FROM users WHERE role = ?', ['seller']);
     const [[{ total_shops }]] = await db.query('SELECT COUNT(*) as total_shops FROM seller_applications WHERE status = ?', ['approved']);
-    const [[{ total_applicants }]] = await db.query('SELECT COUNT(*) as total_applicants FROM seller_applications');
+    const [[{ total_applicants }]] = await db.query("SELECT COUNT(*) as total_applicants FROM seller_applications");
+    const [[{ terminated_count }]] = await db.query("SELECT COUNT(*) as terminated_count FROM seller_applications WHERE status = 'terminated'");
 
     // Calculate Monthly Recurring Revenue (MRR) from active seller subscriptions
     // Basic: ₱0, Pro: ₱499, Enterprise: ₱999
@@ -54,13 +55,33 @@ router.get('/analytics', requireAuth, requireAdmin, async (req, res) => {
     // Subscriptions by plan
     const [subscriptions_by_plan] = await db.query('SELECT subscription_plan, COUNT(*) as count FROM seller_applications WHERE status = "approved" GROUP BY subscription_plan');
 
+    // Monthly Subscription Revenue over last 6 months
+    const [monthly_revenue] = await db.query(`
+      SELECT 
+        DATE_FORMAT(created_at, '%Y-%m') as month_raw,
+        DATE_FORMAT(created_at, '%b %Y') as month, 
+        SUM(
+          CASE 
+            WHEN subscription_plan = 'pro' THEN 499 
+            WHEN subscription_plan = 'enterprise' THEN 999 
+            ELSE 0 
+          END
+        ) as revenue 
+      FROM seller_applications 
+      WHERE status = 'approved' AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+      GROUP BY month_raw, month 
+      ORDER BY month_raw ASC
+    `);
+
     res.json({ 
       analytics: { 
         total_users, 
         total_sellers, 
         total_shops,
         total_applicants,
+        terminated_count,
         total_revenue: total_revenue || 0,
+        monthly_revenue,
         applicants_by_date,
         users_by_date,
         applications_by_status,
@@ -99,8 +120,8 @@ router.get('/applications', requireAuth, requireAdmin, async (req, res) => {
 router.put('/applications/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { status, admin_notes } = req.body;
-    if (!status || !['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Status must be approved or rejected.' });
+    if (!status || !['approved', 'rejected', 'terminated'].includes(status)) {
+      return res.status(400).json({ message: 'Status must be approved, rejected, or terminated.' });
     }
 
     const [apps] = await db.query('SELECT * FROM seller_applications WHERE id = ?', [req.params.id]);
@@ -112,7 +133,7 @@ router.put('/applications/:id', requireAuth, requireAdmin, async (req, res) => {
     // If approved, update user role to seller
     if (status === 'approved') {
       await db.query('UPDATE users SET role = ? WHERE id = ?', ['seller', apps[0].user_id]);
-    } else if (status === 'rejected') {
+    } else if (status === 'rejected' || status === 'terminated') {
       await db.query('UPDATE users SET role = ? WHERE id = ?', ['user', apps[0].user_id]);
       await db.query('UPDATE products SET is_active = 0 WHERE seller_id = ?', [apps[0].user_id]);
     }

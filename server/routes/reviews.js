@@ -138,14 +138,19 @@ router.get('/seller/:sellerId/rating', async (req, res) => {
     );
 
     // Also get shop reviews if any
-    const [shopResult] = await db.query(
-      `SELECT
-         COUNT(*) as total_reviews,
-         COALESCE(AVG(rating), 0) as avg_rating
-       FROM shop_reviews
-       WHERE seller_id = ?`,
-      [sellerId]
-    );
+    let shopResult = [{ total_reviews: 0, avg_rating: 0 }];
+    try {
+      [shopResult] = await db.query(
+        `SELECT
+           COUNT(*) as total_reviews,
+           COALESCE(AVG(rating), 0) as avg_rating
+         FROM shop_reviews
+         WHERE seller_id = ?`,
+        [sellerId]
+      );
+    } catch (e) {
+      // Ignore if table doesn't exist
+    }
 
     const productReviews = result[0];
     const shopReviews = shopResult[0];

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity } from 'react-icons/fi';
+import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity, FiAlertTriangle, FiSlash } from 'react-icons/fi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -120,7 +120,19 @@ export default function AdminDashboard() {
                   <div className="kpi-info">
                     <span className="kpi-label">Seller Applicants</span>
                     <span className="kpi-value">{analytics.total_applicants || 0}</span>
-                    <span className="kpi-sub">Users applied to be sellers</span>
+                    <span className="kpi-sub">Total applications received</span>
+                  </div>
+                </div>
+
+                {/* Terminated Accounts */}
+                <div className="admin-kpi-card kpi-terminated">
+                  <div className="kpi-icon-wrap kpi-icon-red">
+                    <FiSlash size={24} />
+                  </div>
+                  <div className="kpi-info">
+                    <span className="kpi-label">Terminated Accounts</span>
+                    <span className="kpi-value">{analytics.terminated_count || 0}</span>
+                    <span className="kpi-sub">Sellers who terminated plans</span>
                   </div>
                 </div>
 
@@ -138,7 +150,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* User Growth Trend Chart */}
-              <div className="admin-chart-row">
+              <div className="admin-chart-row-grid">
                 <div className="admin-chart-card card">
                   <h3>User Growth (Last 30 Days)</h3>
                   <div className="admin-chart-wrap">
@@ -163,6 +175,40 @@ export default function AdminDashboard() {
                         interaction: { mode: 'index', intersect: false },
                         scales: {
                           y: { type: 'linear', display: true, position: 'left' }
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Monthly Revenue Chart */}
+                <div className="admin-chart-card card">
+                  <h3>Monthly Revenue (Platform)</h3>
+                  <div className="admin-chart-wrap">
+                    <Bar
+                      data={{
+                        labels: (analytics.monthly_revenue || []).map(r => r.month),
+                        datasets: [
+                          {
+                            label: 'Revenue (₱)',
+                            data: (analytics.monthly_revenue || []).map(r => r.revenue),
+                            backgroundColor: '#1a8a4a',
+                            borderRadius: 6,
+                          }
+                        ]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                          y: { 
+                            type: 'linear', 
+                            display: true, 
+                            position: 'left',
+                            ticks: {
+                              callback: (value) => '₱' + value
+                            }
+                          }
                         }
                       }}
                     />
@@ -196,16 +242,28 @@ export default function AdminDashboard() {
                 <div className="admin-chart-card card">
                   <h3>Application Status</h3>
                   <div className="admin-chart-wrap-sm">
-                    <Doughnut
-                      data={{
-                        labels: (analytics.applications_by_status || []).map(s => s.status.charAt(0).toUpperCase() + s.status.slice(1)),
-                        datasets: [{
-                          data: (analytics.applications_by_status || []).map(s => s.count),
-                          backgroundColor: ['#b07d04', '#1a8a4a', '#c42b2b'],
-                        }]
-                      }}
-                      options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }}
-                    />
+                    {(() => {
+                      const statusColorMap = {
+                        pending: '#b07d04',
+                        approved: '#1a8a4a',
+                        rejected: '#c42b2b',
+                        terminated: '#7c3aed',
+                      };
+                      const statusData = (analytics.applications_by_status || [])
+                        .filter(s => ['pending', 'approved', 'rejected', 'terminated'].includes(s.status));
+                      return (
+                        <Doughnut
+                          data={{
+                            labels: statusData.map(s => s.status.charAt(0).toUpperCase() + s.status.slice(1)),
+                            datasets: [{
+                              data: statusData.map(s => s.count),
+                              backgroundColor: statusData.map(s => statusColorMap[s.status] || '#888'),
+                            }]
+                          }}
+                          options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }}
+                        />
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -244,7 +302,7 @@ export default function AdminDashboard() {
                           <p className="app-meta">by {app.user_name} ({app.user_email})</p>
                         </div>
                         <span className={`status-badge status-${app.status}`}>
-                          {app.status === 'pending' ? <FiClock /> : app.status === 'approved' ? <FiCheck /> : <FiX />}
+                          {app.status === 'pending' ? <FiClock /> : app.status === 'approved' ? <FiCheck /> : app.status === 'terminated' ? <FiSlash /> : <FiX />}
                           {app.status}
                         </span>
                       </div>
@@ -274,8 +332,8 @@ export default function AdminDashboard() {
                       {app.status === 'approved' && (
                         <div className="app-actions">
                           <div className="btn-group">
-                            <button className="btn btn-danger btn-sm" onClick={() => { if(confirm('Are you sure you want to terminate this seller?')) handleApplication(app.id, 'rejected'); }}>
-                              <FiX size={14} /> Terminate
+                            <button className="btn btn-danger btn-sm" onClick={() => { if(confirm('Are you sure you want to terminate this seller? This will remove them from active applicants.')) handleApplication(app.id, 'terminated'); }}>
+                              <FiSlash size={14} /> Terminate
                             </button>
                           </div>
                         </div>

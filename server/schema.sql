@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS seller_applications (
   business_address VARCHAR(500) NOT NULL,
   business_phone VARCHAR(20) NOT NULL,
   agreed_to_terms TINYINT(1) DEFAULT 0,
-  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  status ENUM('pending', 'approved', 'rejected', 'terminated') DEFAULT 'pending',
   subscription_plan ENUM('basic', 'pro', 'enterprise') DEFAULT 'basic',
   admin_notes TEXT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

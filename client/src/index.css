@@ -358,6 +358,8 @@ h3 { font-size: 1.15rem; }
 .status-pending { background: var(--warning-light); color: var(--warning); border: 1px solid rgba(176, 125, 4, 0.15); }
 .status-approved { background: var(--success-light); color: var(--success); border: 1px solid rgba(26, 138, 74, 0.15); }
 .status-rejected { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(196, 43, 43, 0.15); }
+.status-terminated { background: rgba(124, 58, 237, 0.07); color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.15); }
+[data-theme="dark"] .status-terminated { background: rgba(167, 139, 250, 0.1); color: #a78bfa; border-color: rgba(167, 139, 250, 0.2); }
 .role-badge {
   display: inline-block; padding: 3px 12px; border-radius: 12px;
   font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
