@@ -801,6 +801,7 @@
 }
 .kpi-revenue::before { background: linear-gradient(180deg, #1a8a4a, #15703c); }
 .kpi-applicants::before { background: linear-gradient(180deg, #2563eb, #1d4ed8); }
+.kpi-sellers::before { background: linear-gradient(180deg, #0284c7, #0369a1); }
 .kpi-users::before { background: linear-gradient(180deg, #c2630a, #a85408); }
 .kpi-terminated::before { background: linear-gradient(180deg, #7c3aed, #6d28d9); }
 .kpi-icon-wrap {
@@ -811,14 +812,17 @@
 }
 .kpi-icon-green { background: rgba(26, 138, 74, 0.1); color: #1a8a4a; }
 .kpi-icon-blue { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+.kpi-icon-cyan { background: rgba(2, 132, 199, 0.1); color: #0284c7; }
 .kpi-icon-amber { background: rgba(194, 99, 10, 0.1); color: #c2630a; }
 .kpi-icon-red { background: rgba(124, 58, 237, 0.1); color: #7c3aed; }
 [data-theme="dark"] .kpi-icon-green { background: rgba(48, 216, 136, 0.1); color: #30d888; }
 [data-theme="dark"] .kpi-icon-blue { background: rgba(96, 160, 255, 0.1); color: #60a0ff; }
+[data-theme="dark"] .kpi-icon-cyan { background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
 [data-theme="dark"] .kpi-icon-amber { background: rgba(232, 146, 14, 0.1); color: #e8920e; }
 [data-theme="dark"] .kpi-icon-red { background: rgba(167, 139, 250, 0.1); color: #a78bfa; }
 [data-theme="dark"] .kpi-revenue::before { background: linear-gradient(180deg, #30d888, #22a858); }
 [data-theme="dark"] .kpi-applicants::before { background: linear-gradient(180deg, #60a0ff, #4080e0); }
+[data-theme="dark"] .kpi-sellers::before { background: linear-gradient(180deg, #38bdf8, #0ea5e9); }
 [data-theme="dark"] .kpi-users::before { background: linear-gradient(180deg, #e8920e, #d07a08); }
 [data-theme="dark"] .kpi-terminated::before { background: linear-gradient(180deg, #a78bfa, #8b5cf6); }
 .kpi-info { display: flex; flex-direction: column; gap: 2px; }

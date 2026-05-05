@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity, FiAlertTriangle, FiSlash } from 'react-icons/fi';
+import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity, FiAlertTriangle, FiSlash, FiShoppingBag } from 'react-icons/fi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -133,6 +133,18 @@ export default function AdminDashboard() {
                     <span className="kpi-label">Terminated Accounts</span>
                     <span className="kpi-value">{analytics.terminated_count || 0}</span>
                     <span className="kpi-sub">Sellers who terminated plans</span>
+                  </div>
+                </div>
+
+                {/* Total Sellers */}
+                <div className="admin-kpi-card kpi-sellers">
+                  <div className="kpi-icon-wrap kpi-icon-cyan">
+                    <FiShoppingBag size={24} />
+                  </div>
+                  <div className="kpi-info">
+                    <span className="kpi-label">Total Sellers</span>
+                    <span className="kpi-value">{analytics.total_sellers || 0}</span>
+                    <span className="kpi-sub">Active sellers on platform</span>
                   </div>
                 </div>
 
