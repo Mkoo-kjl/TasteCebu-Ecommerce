@@ -429,6 +429,20 @@ router.get('/analytics', requireAuth, requireSeller, async (req, res) => {
       [sellerId]
     );
 
+    // Monthly Revenue over last 6 months
+    const [monthlyRevenue] = await db.query(`
+      SELECT 
+        DATE_FORMAT(o.created_at, '%Y-%m') as month_raw,
+        DATE_FORMAT(o.created_at, '%b %Y') as month, 
+        SUM(oi.product_price * oi.quantity) as revenue 
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.id
+      JOIN orders o ON oi.order_id = o.id
+      WHERE p.seller_id = ? AND o.status = 'delivered' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+      GROUP BY month_raw, month 
+      ORDER BY month_raw ASC
+    `, [sellerId]);
+
     res.json({
       summary: {
         totalRevenue: Number(revenueResult[0].total_revenue),
@@ -439,6 +453,7 @@ router.get('/analytics', requireAuth, requireSeller, async (req, res) => {
       },
       productStats,
       statusBreakdown,
+      monthlyRevenue,
     });
   } catch (err) {
     console.error('Get seller analytics error:', err);

@@ -6,6 +6,33 @@ import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiDollarSign, FiBox, FiShoppingBag, FiX, FiImage,
   FiClock, FiTruck, FiCheckCircle, FiXCircle, FiBarChart2, FiStar, FiTrendingUp, FiShoppingCart, FiFileText } from 'react-icons/fi';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  Filler
+} from 'chart.js';
+import { Bar, Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  Filler
+);
 
 const CATEGORIES = ['Dried Fruits', 'Meat & Lechon', 'Pastries & Bread', 'Snacks', 'Beverages', 'Condiments', 'Seafood', 'Sweets', 'General'];
 const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -463,6 +490,56 @@ export default function SellerDashboard() {
                   </div>
                 </div>
               </div>
+
+          {/* Charts Row */}
+          <div className="admin-chart-row-grid">
+            <div className="admin-chart-card card">
+              <h3>Monthly Revenue</h3>
+              <div className="admin-chart-wrap">
+                {(!analytics.monthlyRevenue || analytics.monthlyRevenue.length === 0) ? (
+                  <p className="text-muted" style={{textAlign: 'center', marginTop: '40px'}}>No revenue data yet.</p>
+                ) : (
+                  <Bar
+                    data={{
+                      labels: analytics.monthlyRevenue.map(r => r.month),
+                      datasets: [{
+                        label: 'Revenue (₱)',
+                        data: analytics.monthlyRevenue.map(r => Number(r.revenue)),
+                        backgroundColor: '#10b981',
+                        borderRadius: 6,
+                      }]
+                    }}
+                    options={{
+                      responsive: true, maintainAspectRatio: false,
+                      scales: { y: { type: 'linear', display: true, position: 'left', ticks: { callback: (value) => '₱' + value } } }
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="admin-chart-card card">
+              <h3>Top Selling Products</h3>
+              <div className="admin-chart-wrap-sm">
+                {(() => {
+                  const topProducts = [...(analytics.productStats || [])].sort((a, b) => b.units_sold - a.units_sold).slice(0, 5);
+                  if (topProducts.length === 0) return <p className="text-muted" style={{textAlign: 'center', marginTop: '40px'}}>No sales data yet.</p>;
+                  return (
+                    <Doughnut
+                      data={{
+                        labels: topProducts.map(p => p.name.length > 20 ? p.name.substring(0, 20) + '...' : p.name),
+                        datasets: [{
+                          data: topProducts.map(p => p.units_sold),
+                          backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'],
+                        }]
+                      }}
+                      options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }}
+                    />
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
 
           {/* Order Status Breakdown */}
           {analytics.statusBreakdown && analytics.statusBreakdown.length > 0 && (

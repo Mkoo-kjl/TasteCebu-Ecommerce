@@ -55,6 +55,18 @@ router.get('/analytics', requireAuth, requireAdmin, async (req, res) => {
     // Subscriptions by plan
     const [subscriptions_by_plan] = await db.query('SELECT subscription_plan, COUNT(*) as count FROM seller_applications WHERE status = "approved" GROUP BY subscription_plan');
 
+    // Top selling products across the platform
+    const [top_selling_products] = await db.query(`
+      SELECT p.name, SUM(oi.quantity) as total_sold, SUM(oi.product_price * oi.quantity) as revenue
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.id
+      JOIN orders o ON oi.order_id = o.id
+      WHERE o.status = 'delivered'
+      GROUP BY p.id, p.name
+      ORDER BY total_sold DESC
+      LIMIT 5
+    `);
+
     // Monthly Subscription Revenue over last 6 months
     const [monthly_revenue] = await db.query(`
       SELECT 
@@ -85,7 +97,8 @@ router.get('/analytics', requireAuth, requireAdmin, async (req, res) => {
         applicants_by_date,
         users_by_date,
         applications_by_status,
-        subscriptions_by_plan
+        subscriptions_by_plan,
+        top_selling_products
       } 
     });
   } catch (err) {

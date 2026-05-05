@@ -296,6 +296,28 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
+
+                <div className="admin-chart-card card">
+                  <h3>Top Selling Products</h3>
+                  <div className="admin-chart-wrap-sm">
+                    {(() => {
+                      const topProducts = analytics.top_selling_products || [];
+                      if (topProducts.length === 0) return <p className="text-muted" style={{textAlign: 'center', marginTop: '40px'}}>No sales data yet.</p>;
+                      return (
+                        <Doughnut
+                          data={{
+                            labels: topProducts.map(p => p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name),
+                            datasets: [{
+                              data: topProducts.map(p => p.total_sold),
+                              backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'],
+                            }]
+                          }}
+                          options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }}
+                        />
+                      );
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
           )}
