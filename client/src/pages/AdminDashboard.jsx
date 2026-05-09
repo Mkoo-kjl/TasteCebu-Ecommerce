@@ -3,6 +3,8 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity, FiAlertTriangle, FiSlash, FiShoppingBag, FiDownload } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
+import ConfirmModal from '../components/ConfirmModal';
+import Modal from '../components/Modal';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -39,6 +41,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [adminNotes, setAdminNotes] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [drillDown, setDrillDown] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ open: false, appId: null });
 
   const handleExportExcel = async () => {
     setExporting(true);
@@ -143,6 +147,94 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDrillDown = async (type) => {
+    let title = '', data = [], columns = [];
+    const localTypes = ['userGrowth','monthlyRevenue','applicationsTrend','topProducts'];
+
+    switch (type) {
+      case 'userGrowth':
+        title = 'User Registrations (Last 30 Days)';
+        columns = ['Date', 'New Users'];
+        data = (analytics.users_by_date || []).map(d => ({ Date: new Date(d.date).toLocaleDateString(), 'New Users': d.count }));
+        break;
+      case 'monthlyRevenue':
+        title = 'Monthly Platform Revenue';
+        columns = ['Month', 'Revenue'];
+        data = (analytics.monthly_revenue || []).map(r => ({ Month: r.month, Revenue: '₱' + Number(r.revenue).toLocaleString() }));
+        break;
+      case 'applicationsTrend':
+        title = 'Seller Applications (Last 30 Days)';
+        columns = ['Date', 'New Applicants'];
+        data = (analytics.applicants_by_date || []).map(d => ({ Date: new Date(d.date).toLocaleDateString(), 'New Applicants': d.count }));
+        break;
+      case 'topProducts':
+        title = 'Top Selling Products';
+        columns = ['Product', 'Units Sold', 'Revenue'];
+        data = (analytics.top_selling_products || []).map(p => ({ Product: p.name, 'Units Sold': Number(p.total_sold), Revenue: '₱' + Number(p.revenue).toLocaleString() }));
+        break;
+      default: break;
+    }
+
+    if (localTypes.includes(type)) {
+      setDrillDown({ type, title, data, columns });
+      return;
+    }
+
+    setDrillDown({ type, title: 'Loading...', data: [], columns: [], loading: true });
+    try {
+      const planPrices = { basic: 0, pro: 499, enterprise: 999 };
+      switch (type) {
+        case 'revenue': {
+          const res = await api.get('/admin/applications', { params: { status: 'approved' } });
+          setDrillDown({ type, title: 'Subscription Revenue Breakdown', columns: ['Business', 'Owner', 'Plan', 'Monthly Fee'],
+            data: res.data.applications.map(a => ({ Business: a.business_name, Owner: a.user_name, Plan: (a.subscription_plan || '').charAt(0).toUpperCase() + (a.subscription_plan || '').slice(1), 'Monthly Fee': '₱' + (planPrices[a.subscription_plan] || 0).toLocaleString() })) });
+          break;
+        }
+        case 'applicants': {
+          const res = await api.get('/admin/applications');
+          setDrillDown({ type, title: 'All Seller Applications', columns: ['Business', 'Applicant', 'Email', 'Status', 'Applied'],
+            data: res.data.applications.map(a => ({ Business: a.business_name, Applicant: a.user_name, Email: a.user_email, Status: (a.status || '').charAt(0).toUpperCase() + (a.status || '').slice(1), Applied: new Date(a.created_at).toLocaleDateString() })) });
+          break;
+        }
+        case 'terminated': {
+          const res = await api.get('/admin/applications', { params: { status: 'terminated' } });
+          setDrillDown({ type, title: 'Terminated Accounts', columns: ['Business', 'Owner', 'Email', 'Plan', 'Date'],
+            data: res.data.applications.map(a => ({ Business: a.business_name, Owner: a.user_name, Email: a.user_email, Plan: (a.subscription_plan || '').charAt(0).toUpperCase() + (a.subscription_plan || '').slice(1), Date: new Date(a.created_at).toLocaleDateString() })) });
+          break;
+        }
+        case 'sellers': {
+          const res = await api.get('/admin/applications', { params: { status: 'approved' } });
+          setDrillDown({ type, title: 'Active Sellers', columns: ['Business', 'Owner', 'Email', 'Phone', 'Plan'],
+            data: res.data.applications.map(a => ({ Business: a.business_name, Owner: a.user_name, Email: a.user_email, Phone: a.business_phone || '—', Plan: (a.subscription_plan || '').charAt(0).toUpperCase() + (a.subscription_plan || '').slice(1) })) });
+          break;
+        }
+        case 'users': {
+          const res = await api.get('/admin/users');
+          setDrillDown({ type, title: 'All Registered Users', columns: ['Name', 'Email', 'Phone', 'Role', 'Joined'],
+            data: res.data.users.map(u => ({ Name: u.name, Email: u.email, Phone: u.phone || '—', Role: (u.role || '').charAt(0).toUpperCase() + (u.role || '').slice(1), Joined: new Date(u.created_at).toLocaleDateString() })) });
+          break;
+        }
+        case 'applicationStatus': {
+          const res = await api.get('/admin/applications');
+          setDrillDown({ type, title: 'Applications by Status', columns: ['Business', 'Applicant', 'Email', 'Status', 'Date'],
+            data: res.data.applications.map(a => ({ Business: a.business_name, Applicant: a.user_name, Email: a.user_email, Status: (a.status || '').charAt(0).toUpperCase() + (a.status || '').slice(1), Date: new Date(a.created_at).toLocaleDateString() })) });
+          break;
+        }
+        case 'subscriptions': {
+          const res = await api.get('/admin/applications', { params: { status: 'approved' } });
+          setDrillDown({ type, title: 'Seller Subscriptions by Plan', columns: ['Business', 'Owner', 'Plan', 'Monthly Fee'],
+            data: res.data.applications.map(a => ({ Business: a.business_name, Owner: a.user_name, Plan: (a.subscription_plan || '').charAt(0).toUpperCase() + (a.subscription_plan || '').slice(1), 'Monthly Fee': '₱' + (planPrices[a.subscription_plan] || 0).toLocaleString() })) });
+          break;
+        }
+        default: break;
+      }
+    } catch (err) {
+      console.error('Drill-down fetch error:', err);
+      setDrillDown(null);
+      toast.error('Failed to load details');
+    }
+  };
+
   const pendingApplicants = applications.filter(a => a.status === 'pending').length;
 
   return (
@@ -179,7 +271,7 @@ export default function AdminDashboard() {
               </div>
               <div className="admin-analytics-grid">
                 {/* Subscription Revenue */}
-                <div className="admin-kpi-card kpi-revenue">
+                <div className="admin-kpi-card kpi-revenue clickable" onClick={() => handleDrillDown('revenue')}>
                   <div className="kpi-icon-wrap kpi-icon-green">
                     <FiDollarSign size={24} />
                   </div>
@@ -191,7 +283,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Seller Applicants */}
-                <div className="admin-kpi-card kpi-applicants">
+                <div className="admin-kpi-card kpi-applicants clickable" onClick={() => handleDrillDown('applicants')}>
                   <div className="kpi-icon-wrap kpi-icon-blue">
                     <FiUserPlus size={24} />
                   </div>
@@ -203,7 +295,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Terminated Accounts */}
-                <div className="admin-kpi-card kpi-terminated">
+                <div className="admin-kpi-card kpi-terminated clickable" onClick={() => handleDrillDown('terminated')}>
                   <div className="kpi-icon-wrap kpi-icon-red">
                     <FiSlash size={24} />
                   </div>
@@ -215,7 +307,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Total Sellers */}
-                <div className="admin-kpi-card kpi-sellers">
+                <div className="admin-kpi-card kpi-sellers clickable" onClick={() => handleDrillDown('sellers')}>
                   <div className="kpi-icon-wrap kpi-icon-cyan">
                     <FiShoppingBag size={24} />
                   </div>
@@ -227,7 +319,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Total Users */}
-                <div className="admin-kpi-card kpi-users">
+                <div className="admin-kpi-card kpi-users clickable" onClick={() => handleDrillDown('users')}>
                   <div className="kpi-icon-wrap kpi-icon-amber">
                     <FiUsers size={24} />
                   </div>
@@ -241,7 +333,7 @@ export default function AdminDashboard() {
 
               {/* User Growth Trend Chart */}
               <div className="admin-chart-row-grid">
-                <div className="admin-chart-card card">
+                <div className="admin-chart-card card clickable" onClick={() => handleDrillDown('userGrowth')}>
                   <h3>User Growth (Last 30 Days)</h3>
                   <div className="admin-chart-wrap">
                     <Line
@@ -272,7 +364,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Monthly Revenue Chart */}
-                <div className="admin-chart-card card">
+                <div className="admin-chart-card card clickable" onClick={() => handleDrillDown('monthlyRevenue')}>
                   <h3>Monthly Revenue (Platform)</h3>
                   <div className="admin-chart-wrap">
                     <Bar
@@ -308,7 +400,7 @@ export default function AdminDashboard() {
 
               {/* Bottom Charts Grid */}
               <div className="admin-charts-grid">
-                <div className="admin-chart-card card">
+                <div className="admin-chart-card card clickable" onClick={() => handleDrillDown('applicationsTrend')}>
                   <h3>Seller Applications Trend</h3>
                   <div className="admin-chart-wrap-sm">
                     <Line
@@ -329,7 +421,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="admin-chart-card card">
+                <div className="admin-chart-card card clickable" onClick={() => handleDrillDown('applicationStatus')}>
                   <h3>Application Status</h3>
                   <div className="admin-chart-wrap-sm">
                     {(() => {
@@ -357,7 +449,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="admin-chart-card card">
+                <div className="admin-chart-card card clickable" onClick={() => handleDrillDown('subscriptions')}>
                   <h3>Seller Subscriptions</h3>
                   <div className="admin-chart-wrap-sm">
                     <Bar
@@ -375,7 +467,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="admin-chart-card card">
+                <div className="admin-chart-card card clickable" onClick={() => handleDrillDown('topProducts')}>
                   <h3>Top Selling Products</h3>
                   <div className="admin-chart-wrap-sm">
                     {(() => {
@@ -444,7 +536,7 @@ export default function AdminDashboard() {
                       {app.status === 'approved' && (
                         <div className="app-actions">
                           <div className="btn-group">
-                            <button className="btn btn-danger btn-sm" onClick={() => { if(confirm('Are you sure you want to terminate this seller? This will remove them from active applicants.')) handleApplication(app.id, 'terminated'); }}>
+                            <button className="btn btn-danger btn-sm" onClick={() => setConfirmModal({ open: true, appId: app.id })}>
                               <FiSlash size={14} /> Terminate
                             </button>
                           </div>
@@ -479,6 +571,49 @@ export default function AdminDashboard() {
           )}
         </>
       )}
+
+      {/* Drill-Down Detail Modal */}
+      <Modal isOpen={!!drillDown} onClose={() => setDrillDown(null)} title={drillDown?.title || ''}>
+        <div className="drill-down-content">
+          {drillDown?.loading ? (
+            <div className="loading-screen" style={{ padding: '40px 0' }}><div className="spinner"></div></div>
+          ) : drillDown?.data?.length === 0 ? (
+            <div className="drill-down-empty"><span>📊</span><p>No data available</p></div>
+          ) : (
+            <div className="products-table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>{(drillDown?.columns || []).map(col => <th key={col}>{col}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {(drillDown?.data || []).map((row, i) => (
+                    <tr key={i}>{(drillDown?.columns || []).map(col => <td key={col}>{row[col]}</td>)}</tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {drillDown?.data?.length > 0 && (
+            <p style={{ textAlign: 'right', fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px' }}>
+              Showing {drillDown.data.length} record{drillDown.data.length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+      </Modal>
+
+      {/* Confirm Terminate Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.open}
+        onClose={() => setConfirmModal({ open: false, appId: null })}
+        onConfirm={() => {
+          handleApplication(confirmModal.appId, 'terminated');
+          setConfirmModal({ open: false, appId: null });
+        }}
+        title="Terminate Seller"
+        message="Are you sure you want to terminate this seller? This will remove them from active applicants and deactivate their products."
+        confirmText="Terminate"
+        variant="danger"
+      />
     </div>
   );
 }

@@ -23,16 +23,28 @@ async function seed() {
     await connection.query('USE tastecebu');
     console.log('Database recreated.');
 
-    // Read and execute schema (skip the CREATE/USE DATABASE lines)
-    const schemaPath = path.join(__dirname, 'schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    // Filter out CREATE DATABASE and USE lines since we already handled them
-    const filteredSchema = schema
-      .split('\n')
-      .filter(line => !line.match(/^(CREATE DATABASE|USE )/i))
-      .join('\n');
-    await connection.query(filteredSchema);
-    console.log('Schema created successfully.');
+    // Helper to run a SQL file, filtering out CREATE/USE DATABASE lines
+    const runSQLFile = async (filename) => {
+      const filePath = path.join(__dirname, filename);
+      if (!fs.existsSync(filePath)) {
+        console.log(`  Skipping ${filename} (not found)`);
+        return;
+      }
+      const sql = fs.readFileSync(filePath, 'utf8');
+      const filtered = sql
+        .split('\n')
+        .filter(line => !line.match(/^(CREATE DATABASE|USE )/i))
+        .join('\n');
+      await connection.query(filtered);
+      console.log(`  Executed ${filename}`);
+    };
+
+    // Run base schema + all migrations
+    await runSQLFile('schema.sql');
+    await runSQLFile('schema_update.sql');
+    await runSQLFile('schema_update_v2.sql');
+    await runSQLFile('schema_update_v3.sql');
+    console.log('Schema and migrations applied successfully.');
 
     // Check if admin already exists
     const [existingAdmin] = await connection.query(

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import Modal from '../components/Modal';
+import ConfirmModal from '../components/ConfirmModal';
 import toast from 'react-hot-toast';
 import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiDollarSign, FiBox, FiShoppingBag, FiX, FiImage,
   FiClock, FiTruck, FiCheckCircle, FiXCircle, FiBarChart2, FiStar, FiTrendingUp, FiShoppingCart, FiFileText, FiDownload } from 'react-icons/fi';
@@ -104,6 +105,8 @@ export default function SellerDashboard() {
   const [upgradePlanSelected, setUpgradePlanSelected] = useState('pro');
   const [upgrading, setUpgrading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, productId: null });
+  const [terminateConfirm, setTerminateConfirm] = useState(false);
 
   const handleExportExcel = async () => {
     setExporting(true);
@@ -294,7 +297,6 @@ export default function SellerDashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this product? This action cannot be undone.')) return;
     try {
       await api.delete(`/seller/products/${id}`);
       toast.success('Product deleted');
@@ -315,7 +317,6 @@ export default function SellerDashboard() {
   };
 
   const handleTerminate = async () => {
-    if (!confirm('Are you sure you want to terminate your seller subscription? This will close your shop and deactivate your products.')) return;
     try {
       await api.post('/seller/terminate');
       toast.success('Subscription terminated successfully.');
@@ -364,7 +365,7 @@ export default function SellerDashboard() {
               <FiPlus size={16} /> Add Product
             </button>
           )}
-          <button className="btn btn-danger" onClick={handleTerminate}>
+          <button className="btn btn-danger" onClick={() => setTerminateConfirm(true)}>
             <FiX size={16} /> Terminate
           </button>
         </div>
@@ -429,7 +430,7 @@ export default function SellerDashboard() {
                         <td>
                           <div className="table-actions">
                             <button className="btn-icon" onClick={() => openEditModal(p)} title="Edit"><FiEdit2 size={14} /></button>
-                            <button className="btn-icon danger" onClick={() => handleDelete(p.id)} title="Delete"><FiTrash2 size={14} /></button>
+                            <button className="btn-icon danger" onClick={() => setDeleteConfirm({ open: true, productId: p.id })} title="Delete"><FiTrash2 size={14} /></button>
                           </div>
                         </td>
                       </tr>
@@ -779,6 +780,34 @@ export default function SellerDashboard() {
           </button>
         </div>
       </Modal>
+
+      {/* Delete Product Confirm */}
+      <ConfirmModal
+        isOpen={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, productId: null })}
+        onConfirm={() => {
+          handleDelete(deleteConfirm.productId);
+          setDeleteConfirm({ open: false, productId: null });
+        }}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+      />
+
+      {/* Terminate Subscription Confirm */}
+      <ConfirmModal
+        isOpen={terminateConfirm}
+        onClose={() => setTerminateConfirm(false)}
+        onConfirm={() => {
+          handleTerminate();
+          setTerminateConfirm(false);
+        }}
+        title="Terminate Subscription"
+        message="Are you sure you want to terminate your seller subscription? This will close your shop and deactivate your products."
+        confirmText="Terminate"
+        variant="danger"
+      />
 
     </div>
   );

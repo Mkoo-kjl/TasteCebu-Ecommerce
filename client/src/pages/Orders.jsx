@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../components/ConfirmModal';
 import { FiPackage, FiClock, FiTruck, FiCheckCircle, FiXCircle, FiStar, FiFileText } from 'react-icons/fi';
 
 const STATUS_CONFIG = {
@@ -30,6 +31,7 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [cancelConfirm, setCancelConfirm] = useState({ open: false, orderId: null });
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -47,7 +49,6 @@ export default function Orders() {
   useEffect(() => { fetchOrders(); }, [activeTab]);
 
   const cancelOrder = async (id) => {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
     try {
       await api.put(`/orders/${id}/cancel`);
       toast.success('Order cancelled');
@@ -127,7 +128,7 @@ export default function Orders() {
                   <div className="order-total-row">
                     <span className="order-total">Total: ₱{Number(order.total_amount).toFixed(2)}</span>
                     {order.status === 'pending' && (
-                      <button className="btn btn-danger btn-sm" onClick={() => cancelOrder(order.id)}>Cancel Order</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => setCancelConfirm({ open: true, orderId: order.id })}>Cancel Order</button>
                     )}
                     {order.status === 'delivered' && (
                       <Link to={`/orders/${order.id}/receipt`} className="btn btn-sm btn-receipt" id={`receipt-btn-${order.id}`}>
@@ -141,6 +142,20 @@ export default function Orders() {
           })}
         </div>
       )}
+
+      {/* Cancel Order Confirm */}
+      <ConfirmModal
+        isOpen={cancelConfirm.open}
+        onClose={() => setCancelConfirm({ open: false, orderId: null })}
+        onConfirm={() => {
+          cancelOrder(cancelConfirm.orderId);
+          setCancelConfirm({ open: false, orderId: null });
+        }}
+        title="Cancel Order"
+        message="Are you sure you want to cancel this order? This action cannot be undone."
+        confirmText="Cancel Order"
+        variant="danger"
+      />
     </div>
   );
 }
