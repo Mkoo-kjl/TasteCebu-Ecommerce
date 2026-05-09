@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { FiShoppingCart, FiUser, FiSun, FiMoon, FiMenu, FiX, FiLogOut, FiPackage, FiSettings, FiGrid, FiShield } from 'react-icons/fi';
+import { FiShoppingCart, FiUser, FiSun, FiMoon, FiMenu, FiX, FiLogOut, FiPackage, FiSettings, FiGrid, FiShield, FiMessageSquare } from 'react-icons/fi';
+import api from '../utils/api';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -11,6 +12,21 @@ export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnread = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await api.get('/messages/unread-count');
+      setUnreadCount(res.data.unread_count || 0);
+    } catch (err) { /* ignore */ }
+  }, [user]);
+
+  useEffect(() => {
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
 
   const handleLogout = () => {
     logout();
@@ -54,6 +70,15 @@ export default function Navbar() {
               {user.role === 'user' && (
                 <Link to="/cart" className="cart-btn" id="nav-cart-btn">
                   <FiShoppingCart size={18} />
+                </Link>
+              )}
+
+              {user.role !== 'admin' && (
+                <Link to="/messages" className="cart-btn nav-messages-btn" id="nav-messages-btn" title="Messages">
+                  <FiMessageSquare size={18} />
+                  {unreadCount > 0 && (
+                    <span className="nav-unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                  )}
                 </Link>
               )}
 

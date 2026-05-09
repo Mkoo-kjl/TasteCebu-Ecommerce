@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity, FiAlertTriangle, FiSlash, FiShoppingBag } from 'react-icons/fi';
+import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity, FiAlertTriangle, FiSlash, FiShoppingBag, FiDownload } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -37,6 +38,78 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adminNotes, setAdminNotes] = useState('');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get('/admin/analytics/export');
+      const data = res.data;
+      const wb = XLSX.utils.book_new();
+
+      // Summary
+      const summaryData = [
+        ['Metric', 'Value'],
+        ['Total Users', data.summary.total_users],
+        ['Total Sellers', data.summary.total_sellers],
+        ['Active Shops', data.summary.total_shops],
+        ['Total Applicants', data.summary.total_applicants],
+        ['Terminated Accounts', data.summary.terminated_count],
+        ['Subscription Revenue (₱)', data.summary.total_revenue],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'Platform Summary');
+
+      // User Growth
+      if (data.users_by_date.length > 0) {
+        const userRows = [['Date', 'New Users'], ...data.users_by_date.map(d => [d.date, d.count])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(userRows), 'User Growth');
+      }
+
+      // Monthly Revenue
+      if (data.monthly_revenue.length > 0) {
+        const revRows = [['Month', 'Revenue (₱)'], ...data.monthly_revenue.map(r => [r.month, r.revenue])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(revRows), 'Monthly Revenue');
+      }
+
+      // Application Status
+      if (data.applications_by_status.length > 0) {
+        const appRows = [['Status', 'Count'], ...data.applications_by_status.map(s => [s.status, s.count])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(appRows), 'Application Status');
+      }
+
+      // Subscription Plans
+      if (data.subscriptions_by_plan.length > 0) {
+        const subRows = [['Plan', 'Count'], ...data.subscriptions_by_plan.map(s => [s.subscription_plan, s.count])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(subRows), 'Subscription Plans');
+      }
+
+      // Seller Applications Trend (matches the chart)
+      if (data.applicants_by_date && data.applicants_by_date.length > 0) {
+        const appTrendRows = [['Date', 'New Applicants'], ...data.applicants_by_date.map(d => [d.date, d.count])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(appTrendRows), 'Applicants Trend');
+      }
+
+      // Top Products
+      if (data.top_selling_products.length > 0) {
+        const prodRows = [['Product', 'Units Sold', 'Revenue (₱)'], ...data.top_selling_products.map(p => [p.name, p.total_sold, p.revenue])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(prodRows), 'Top Products');
+      }
+
+      // All Users
+      if (data.allUsers.length > 0) {
+        const uRows = [['Name', 'Email', 'Phone', 'Role', 'Joined'], ...data.allUsers.map(u => [u.name, u.email, u.phone, u.role, u.joined])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(uRows), 'All Users');
+      }
+
+      const date = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `TasteCebu_Admin_Analytics_${date}.xlsx`);
+      toast.success('Analytics exported successfully!');
+    } catch (err) {
+      toast.error('Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,6 +172,11 @@ export default function AdminDashboard() {
         <>
           {activeTab === 'analytics' && analytics && (
             <div className="admin-section">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                <button className="btn btn-export" onClick={handleExportExcel} disabled={exporting} id="admin-export-btn">
+                  <FiDownload size={15} /> {exporting ? 'Exporting...' : 'Export to Excel'}
+                </button>
+              </div>
               <div className="admin-analytics-grid">
                 {/* Subscription Revenue */}
                 <div className="admin-kpi-card kpi-revenue">

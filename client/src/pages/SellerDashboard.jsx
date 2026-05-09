@@ -5,7 +5,8 @@ import api from '../utils/api';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 import { FiPlus, FiEdit2, FiTrash2, FiPackage, FiDollarSign, FiBox, FiShoppingBag, FiX, FiImage,
-  FiClock, FiTruck, FiCheckCircle, FiXCircle, FiBarChart2, FiStar, FiTrendingUp, FiShoppingCart, FiFileText } from 'react-icons/fi';
+  FiClock, FiTruck, FiCheckCircle, FiXCircle, FiBarChart2, FiStar, FiTrendingUp, FiShoppingCart, FiFileText, FiDownload } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -102,6 +103,61 @@ export default function SellerDashboard() {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradePlanSelected, setUpgradePlanSelected] = useState('pro');
   const [upgrading, setUpgrading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get('/seller/analytics/export');
+      const data = res.data;
+      const wb = XLSX.utils.book_new();
+
+      // Summary sheet
+      const summaryData = [
+        ['Metric', 'Value'],
+        ['Total Revenue (₱)', data.summary.totalRevenue],
+        ['Total Units Sold', data.summary.totalUnitsSold],
+        ['Delivered Orders', data.summary.totalOrders],
+        ['Total Reviews', data.summary.totalReviews],
+        ['Average Rating', data.summary.avgRating],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'Summary');
+
+      // Product Performance sheet
+      if (data.productStats.length > 0) {
+        const prodHeaders = ['Product', 'Category', 'Price (₱)', 'Stock', 'Units Sold', 'Revenue (₱)', 'Avg Rating', 'Reviews'];
+        const prodRows = data.productStats.map(p => [p.name, p.category, p.price, p.stock, p.units_sold, p.revenue, p.avg_rating, p.review_count]);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([prodHeaders, ...prodRows]), 'Product Performance');
+      }
+
+      // Order Status sheet
+      if (data.statusBreakdown.length > 0) {
+        const statusRows = [['Status', 'Count'], ...data.statusBreakdown.map(s => [s.status, s.count])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(statusRows), 'Order Status');
+      }
+
+      // Monthly Revenue sheet
+      if (data.monthlyRevenue.length > 0) {
+        const revRows = [['Month', 'Revenue (₱)'], ...data.monthlyRevenue.map(r => [r.month, r.revenue])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(revRows), 'Monthly Revenue');
+      }
+
+      // Top Selling Products (matches the Doughnut chart - top 5)
+      if (data.productStats.length > 0) {
+        const topProducts = [...data.productStats].sort((a, b) => b.units_sold - a.units_sold).slice(0, 5);
+        const topRows = [['Product', 'Units Sold', 'Revenue (₱)'], ...topProducts.map(p => [p.name, p.units_sold, p.revenue])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(topRows), 'Top Selling Products');
+      }
+
+      const date = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `TasteCebu_Seller_Analytics_${date}.xlsx`);
+      toast.success('Analytics exported successfully!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -460,6 +516,11 @@ export default function SellerDashboard() {
             </div>
           ) : analytics && !analytics.restricted ? (
             <>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                <button className="btn btn-export" onClick={handleExportExcel} disabled={exporting} id="seller-export-btn">
+                  <FiDownload size={15} /> {exporting ? 'Exporting...' : 'Export to Excel'}
+                </button>
+              </div>
               <div className="dashboard-stats analytics-stats">
                 <div className="stat-card stat-revenue">
                   <FiDollarSign size={24} />

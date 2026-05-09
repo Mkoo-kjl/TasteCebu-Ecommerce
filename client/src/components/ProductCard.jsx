@@ -46,7 +46,9 @@ export default function ProductCard({ product }) {
         <div className="product-card-info">
           <h3 className="product-card-name">{product.name}</h3>
           <p className="product-card-description">{product.description}</p>
-          <p className="product-card-seller">by {product.seller_name}</p>
+          <p className="product-card-seller">by <Link to={`/seller/${product.seller_id}`} className="seller-name-link" onClick={(e) => e.stopPropagation()}>
+            {product.seller_name}
+          </Link></p>
           <div className="product-card-reviews">
             <StarRating rating={Number(avgRating)} />
             <span className="review-score">{avgRating}</span>

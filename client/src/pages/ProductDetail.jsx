@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -210,7 +210,7 @@ export default function ProductDetail() {
           <span className="product-category-badge">{product.category}</span>
           <h1>{product.name}</h1>
           <div className="product-seller-row">
-            <p className="product-seller">Sold by <strong>{product.seller_name}</strong></p>
+            <p className="product-seller">Sold by <Link to={`/seller/${product.seller_id}`} className="seller-name-link"><strong>{product.seller_name}</strong></Link></p>
             {sellerRating && sellerRating.totalReviews > 0 && (
               <span className="seller-rating-badge">
                 <StarRating rating={sellerRating.avgRating} size={13} />

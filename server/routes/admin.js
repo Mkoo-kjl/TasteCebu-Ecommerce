@@ -107,6 +107,67 @@ router.get('/analytics', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/analytics/export - Export admin analytics for Excel
+router.get('/analytics/export', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const [[{ total_users }]] = await db.query('SELECT COUNT(*) as total_users FROM users');
+    const [[{ total_sellers }]] = await db.query('SELECT COUNT(*) as total_sellers FROM users WHERE role = ?', ['seller']);
+    const [[{ total_shops }]] = await db.query('SELECT COUNT(*) as total_shops FROM seller_applications WHERE status = ?', ['approved']);
+    const [[{ total_applicants }]] = await db.query("SELECT COUNT(*) as total_applicants FROM seller_applications");
+    const [[{ terminated_count }]] = await db.query("SELECT COUNT(*) as terminated_count FROM seller_applications WHERE status = 'terminated'");
+    const [[{ total_revenue }]] = await db.query(`
+      SELECT SUM(CASE WHEN subscription_plan = 'pro' THEN 499 WHEN subscription_plan = 'enterprise' THEN 999 ELSE 0 END) as total_revenue
+      FROM seller_applications WHERE status = 'approved'
+    `);
+
+    const [users_by_date] = await db.query(`
+      SELECT DATE(created_at) as date, COUNT(*) as count FROM users
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(created_at) ORDER BY date ASC
+    `);
+
+    const [monthly_revenue] = await db.query(`
+      SELECT DATE_FORMAT(created_at, '%b %Y') as month,
+        SUM(CASE WHEN subscription_plan = 'pro' THEN 499 WHEN subscription_plan = 'enterprise' THEN 999 ELSE 0 END) as revenue
+      FROM seller_applications WHERE status = 'approved' AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+      GROUP BY DATE_FORMAT(created_at, '%Y-%m'), month ORDER BY DATE_FORMAT(created_at, '%Y-%m') ASC
+    `);
+
+    const [applications_by_status] = await db.query(`SELECT status, COUNT(*) as count FROM seller_applications GROUP BY status`);
+    const [subscriptions_by_plan] = await db.query('SELECT subscription_plan, COUNT(*) as count FROM seller_applications WHERE status = "approved" GROUP BY subscription_plan');
+
+    // Seller applicants over time (last 30 days) - matches the Seller Applications Trend chart
+    const [applicants_by_date] = await db.query(`
+      SELECT DATE(created_at) as date, COUNT(id) as count 
+      FROM seller_applications 
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      GROUP BY DATE(created_at) ORDER BY date ASC
+    `);
+
+    const [top_selling_products] = await db.query(`
+      SELECT p.name, SUM(oi.quantity) as total_sold, SUM(oi.product_price * oi.quantity) as revenue
+      FROM order_items oi JOIN products p ON oi.product_id = p.id JOIN orders o ON oi.order_id = o.id
+      WHERE o.status = 'delivered' GROUP BY p.id, p.name ORDER BY total_sold DESC LIMIT 10
+    `);
+
+    // All users list for export
+    const [allUsers] = await db.query('SELECT name, email, phone, role, created_at FROM users ORDER BY created_at DESC');
+
+    res.json({
+      summary: { total_users, total_sellers, total_shops, total_applicants, terminated_count, total_revenue: total_revenue || 0 },
+      users_by_date: users_by_date.map(d => ({ date: d.date, count: d.count })),
+      monthly_revenue: monthly_revenue.map(r => ({ month: r.month, revenue: Number(r.revenue) })),
+      applications_by_status,
+      subscriptions_by_plan,
+      applicants_by_date: applicants_by_date.map(d => ({ date: d.date, count: d.count })),
+      top_selling_products: top_selling_products.map(p => ({ name: p.name, total_sold: Number(p.total_sold), revenue: Number(p.revenue) })),
+      allUsers: allUsers.map(u => ({ name: u.name, email: u.email, phone: u.phone || '', role: u.role, joined: u.created_at }))
+    });
+  } catch (err) {
+    console.error('Export admin analytics error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 // GET /api/admin/applications
 router.get('/applications', requireAuth, requireAdmin, async (req, res) => {
   try {

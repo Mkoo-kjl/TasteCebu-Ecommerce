@@ -462,6 +462,102 @@ router.get('/analytics', requireAuth, requireSeller, async (req, res) => {
 });
 
 // =============================================
+// SELLER ANALYTICS EXPORT
+// =============================================
+
+// GET /api/seller/analytics/export - Export analytics data for Excel
+router.get('/analytics/export', requireAuth, requireSeller, async (req, res) => {
+  try {
+    const sellerId = req.user.id;
+
+    // Check plan
+    const [applications] = await db.query(
+      'SELECT subscription_plan FROM seller_applications WHERE user_id = ? AND status = "approved"',
+      [sellerId]
+    );
+    const plan = applications.length > 0 ? applications[0].subscription_plan : 'basic';
+    if (plan === 'basic') {
+      return res.status(403).json({ message: 'Export is not available on the Basic plan.' });
+    }
+
+    // Summary
+    const [revenueResult] = await db.query(
+      `SELECT COALESCE(SUM(oi.product_price * oi.quantity), 0) as total_revenue,
+              COALESCE(SUM(oi.quantity), 0) as total_units_sold,
+              COUNT(DISTINCT o.id) as total_orders
+       FROM order_items oi
+       JOIN products p ON oi.product_id = p.id
+       JOIN orders o ON oi.order_id = o.id
+       WHERE p.seller_id = ? AND o.status = 'delivered'`,
+      [sellerId]
+    );
+
+    const [ratingResult] = await db.query(
+      `SELECT COUNT(*) as total_reviews, COALESCE(AVG(pr.rating), 0) as avg_rating
+       FROM product_reviews pr JOIN products p ON pr.product_id = p.id
+       WHERE p.seller_id = ?`,
+      [sellerId]
+    );
+
+    // Product stats
+    const [productStats] = await db.query(
+      `SELECT p.name, p.category, p.price, p.stock,
+              COALESCE(sales.units_sold, 0) as units_sold,
+              COALESCE(sales.revenue, 0) as revenue,
+              COALESCE(reviews.avg_rating, 0) as avg_rating,
+              COALESCE(reviews.review_count, 0) as review_count
+       FROM products p
+       LEFT JOIN (
+         SELECT oi.product_id, SUM(oi.quantity) as units_sold, SUM(oi.product_price * oi.quantity) as revenue
+         FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE o.status = 'delivered' GROUP BY oi.product_id
+       ) sales ON p.id = sales.product_id
+       LEFT JOIN (
+         SELECT product_id, AVG(rating) as avg_rating, COUNT(*) as review_count
+         FROM product_reviews GROUP BY product_id
+       ) reviews ON p.id = reviews.product_id
+       WHERE p.seller_id = ? ORDER BY COALESCE(sales.revenue, 0) DESC`,
+      [sellerId]
+    );
+
+    // Order status breakdown
+    const [statusBreakdown] = await db.query(
+      `SELECT o.status, COUNT(DISTINCT o.id) as count
+       FROM orders o JOIN order_items oi ON o.id = oi.order_id JOIN products p ON oi.product_id = p.id
+       WHERE p.seller_id = ? GROUP BY o.status`,
+      [sellerId]
+    );
+
+    // Monthly revenue
+    const [monthlyRevenue] = await db.query(`
+      SELECT DATE_FORMAT(o.created_at, '%b %Y') as month, SUM(oi.product_price * oi.quantity) as revenue
+      FROM order_items oi JOIN products p ON oi.product_id = p.id JOIN orders o ON oi.order_id = o.id
+      WHERE p.seller_id = ? AND o.status = 'delivered' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+      GROUP BY DATE_FORMAT(o.created_at, '%Y-%m'), month ORDER BY DATE_FORMAT(o.created_at, '%Y-%m') ASC
+    `, [sellerId]);
+
+    res.json({
+      summary: {
+        totalRevenue: Number(revenueResult[0].total_revenue),
+        totalUnitsSold: Number(revenueResult[0].total_units_sold),
+        totalOrders: Number(revenueResult[0].total_orders),
+        totalReviews: Number(ratingResult[0].total_reviews),
+        avgRating: Number(Number(ratingResult[0].avg_rating).toFixed(1)),
+      },
+      productStats: productStats.map(p => ({
+        name: p.name, category: p.category, price: Number(p.price), stock: p.stock,
+        units_sold: Number(p.units_sold), revenue: Number(p.revenue),
+        avg_rating: Number(Number(p.avg_rating).toFixed(1)), review_count: Number(p.review_count)
+      })),
+      statusBreakdown,
+      monthlyRevenue: monthlyRevenue.map(r => ({ month: r.month, revenue: Number(r.revenue) })),
+    });
+  } catch (err) {
+    console.error('Export seller analytics error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// =============================================
 // SELLER SUBSCRIPTION UPGRADE
 // =============================================
 
