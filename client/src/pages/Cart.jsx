@@ -18,7 +18,6 @@ function getFirstImage(imageField) {
 
 export default function Cart() {
   const [items, setItems] = useState([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [address, setAddress] = useState('');
   const [placing, setPlacing] = useState(false);
@@ -29,7 +28,6 @@ export default function Cart() {
     try {
       const res = await api.get('/cart');
       setItems(res.data.items);
-      setTotal(res.data.total);
       // Select all items by default on first load
       setSelectedIds(prev => {
         if (prev.size === 0 && res.data.items.length > 0) {
@@ -40,7 +38,7 @@ export default function Cart() {
         const updated = new Set([...prev].filter(id => validIds.has(id)));
         return updated;
       });
-    } catch (err) {
+    } catch {
       console.error('Failed to load cart');
     } finally {
       setLoading(false);

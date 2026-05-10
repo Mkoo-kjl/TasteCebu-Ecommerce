@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiStar } from 'react-icons/fi';
+import { FiStar, FiHeart } from 'react-icons/fi';
 
 // Helper to get the first image from JSON array or legacy string
 function getFirstImage(imageField) {
@@ -42,20 +42,23 @@ export default function ProductCard({ product }) {
             <div className="product-placeholder">🍽️</div>
           )}
           <span className="product-category-badge">{product.category}</span>
+          <button className="product-wishlist-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} aria-label="Add to wishlist">
+            <FiHeart size={16} />
+          </button>
         </div>
         <div className="product-card-info">
           <h3 className="product-card-name">{product.name}</h3>
-          <p className="product-card-description">{product.description}</p>
           <p className="product-card-seller">by <Link to={`/seller/${product.seller_id}`} className="seller-name-link" onClick={(e) => e.stopPropagation()}>
             {product.seller_name}
           </Link></p>
+          <div className="product-card-separator"></div>
           <div className="product-card-reviews">
             <StarRating rating={Number(avgRating)} />
             <span className="review-score">{avgRating}</span>
-            <span className="review-count">({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})</span>
+            <span className="review-count">({reviewCount})</span>
           </div>
           <div className="product-card-bottom">
-            <span className="product-card-price">₱{Number(product.price).toFixed(2)}</span>
+            <span className="product-card-price"><span className="price-currency">₱</span>{Number(product.price).toFixed(2)}</span>
             <span className={`product-card-stock ${product.stock <= 5 ? 'low' : ''}`}>
               {product.stock > 0 ? `${product.stock} left` : 'Out of stock'}
             </span>

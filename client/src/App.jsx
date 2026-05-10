@@ -19,6 +19,7 @@ import Receipt from './pages/Receipt';
 import Settings from './pages/Settings';
 import SellerProfile from './pages/SellerProfile';
 import Messages from './pages/Messages';
+import UserDashboard from './pages/UserDashboard';
 import './App.css';
 
 function App() {
@@ -38,12 +39,13 @@ function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/seller/:id" element={<SellerProfile />} />
-          <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-          <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-          <Route path="/orders/:id/receipt" element={<ProtectedRoute><Receipt /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute roles={['user', 'seller']}><Messages /></ProtectedRoute>} />
+          <Route path="/cart" element={<ProtectedRoute roles={['user', 'seller']}><Cart /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute roles={['user', 'seller']}><Orders /></ProtectedRoute>} />
+          <Route path="/orders/:id/receipt" element={<ProtectedRoute roles={['user', 'seller']}><Receipt /></ProtectedRoute>} />
+          <Route path="/home" element={<ProtectedRoute roles={['user', 'seller']}><UserDashboard /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute roles={['user', 'seller']}><Profile /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute roles={['user', 'seller']}><Settings /></ProtectedRoute>} />
           <Route path="/seller/apply" element={<ProtectedRoute><SellerApply /></ProtectedRoute>} />
           <Route path="/seller/dashboard" element={<ProtectedRoute roles={['seller', 'admin']}><SellerDashboard /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />

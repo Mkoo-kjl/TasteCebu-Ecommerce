@@ -5,6 +5,7 @@ import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, F
 import * as XLSX from 'xlsx';
 import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
+import AdminSidebar from '../components/AdminSidebar';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [applications, setApplications] = useState([]);
   const [users, setUsers] = useState([]);
+  const [platformProducts, setPlatformProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adminNotes, setAdminNotes] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -128,6 +130,9 @@ export default function AdminDashboard() {
         } else if (activeTab === 'users') {
           const res = await api.get('/admin/users');
           setUsers(res.data.users);
+        } else if (activeTab === 'products') {
+          const res = await api.get('/products');
+          setPlatformProducts(res.data.products);
         }
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
@@ -238,25 +243,15 @@ export default function AdminDashboard() {
   const pendingApplicants = applications.filter(a => a.status === 'pending').length;
 
   return (
-    <div className="admin-dashboard" id="admin-dashboard">
-      <div className="page-header">
-        <div>
-          <h1>Admin Dashboard</h1>
-          <p>Manage the TasteCebu platform</p>
+    <div className="dashboard-layout">
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="dashboard-main">
+        <div className="page-header">
+          <div>
+            <h1>Admin Dashboard</h1>
+            <p>Manage the TasteCebu platform</p>
+          </div>
         </div>
-      </div>
-
-      <div className="tabs">
-        <button className={`tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
-          <FiActivity size={14} /> Analytics
-        </button>
-        <button className={`tab ${activeTab === 'applications' ? 'active' : ''}`} onClick={() => setActiveTab('applications')}>
-          <FiFileText size={14} /> Applications
-        </button>
-        <button className={`tab ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-          <FiUsers size={14} /> Users
-        </button>
-      </div>
 
       {loading ? (
         <div className="loading-screen"><div className="spinner"></div></div>
@@ -569,6 +564,41 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {activeTab === 'products' && (
+            <div className="admin-section">
+              <div className="products-table-wrapper">
+                <table className="data-table" id="admin-products-table">
+                  <thead><tr><th>Image</th><th>Product Name</th><th>Seller</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {platformProducts.map(p => {
+                      let firstImg = null;
+                      if (p.image) {
+                        try {
+                          const parsed = JSON.parse(p.image);
+                          if (Array.isArray(parsed) && parsed.length > 0) firstImg = parsed[0];
+                          else firstImg = p.image;
+                        } catch {
+                          firstImg = p.image;
+                        }
+                      }
+                      return (
+                        <tr key={p.id}>
+                          <td><div className="table-img">{firstImg ? <img src={firstImg} alt={p.name} /> : '🍽️'}</div></td>
+                          <td><strong>{p.name}</strong></td>
+                          <td>{p.seller_name}</td>
+                          <td>{p.category}</td>
+                          <td>₱{Number(p.price).toFixed(2)}</td>
+                          <td>{p.stock}</td>
+                          <td><span className={`status-dot ${p.is_active ? 'active' : 'inactive'}`}>{p.is_active ? 'Active' : 'Inactive'}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -614,6 +644,7 @@ export default function AdminDashboard() {
         confirmText="Terminate"
         variant="danger"
       />
+      </div>
     </div>
   );
 }

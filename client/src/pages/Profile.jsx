@@ -3,6 +3,7 @@ import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiLock, FiCamera, FiSave } from 'react-icons/fi';
+import CustomerSidebar from '../components/CustomerSidebar';
 
 export default function Profile() {
   const { user, refreshUser } = useAuth();
@@ -78,11 +79,14 @@ export default function Profile() {
   };
 
   return (
-    <div className="profile-page" id="profile-page">
-      <div className="page-header">
-        <h1>My Profile</h1>
-        <p>Manage your account information</p>
-      </div>
+    <div className="dashboard-layout">
+      <CustomerSidebar activeTab="profile" />
+      <div className="dashboard-main">
+        <div className="profile-page" id="profile-page">
+          <div className="page-header">
+            <h1>My Profile</h1>
+            <p>Manage your account information</p>
+          </div>
 
       <div className="profile-tabs">
         <button className={`tab ${activeSection === 'profile' ? 'active' : ''}`} onClick={() => setActiveSection('profile')}>
@@ -159,6 +163,8 @@ export default function Profile() {
           </button>
         </form>
       )}
+        </div>
+      </div>
     </div>
   );
 }

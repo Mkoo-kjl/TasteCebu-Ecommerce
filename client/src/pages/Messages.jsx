@@ -4,10 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { FiSend, FiMessageSquare, FiArrowLeft, FiSearch, FiCheck, FiCheckCircle } from 'react-icons/fi';
+import CustomerSidebar from '../components/CustomerSidebar';
 
 export default function Messages() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -53,7 +53,7 @@ export default function Messages() {
         const listRes = await api.get('/messages/conversations');
         setConversations(listRes.data.conversations);
       }
-    } catch (err) {
+    } catch {
       if (!silent) toast.error('Failed to load messages');
     } finally {
       setChatLoading(false);
@@ -113,7 +113,7 @@ export default function Messages() {
       scrollToBottom();
       // Refresh conversation list
       fetchConversations();
-    } catch (err) {
+    } catch {
       toast.error('Failed to send message');
     } finally {
       setSending(false);
@@ -178,9 +178,12 @@ export default function Messages() {
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
 
   return (
-    <div className="messages-page" id="messages-page">
-      <div className="page-header">
-        <h1><FiMessageSquare size={24} /> Messages</h1>
+    <div className="dashboard-layout">
+      <CustomerSidebar activeTab="messages" />
+      <div className="dashboard-main">
+        <div className="messages-page" id="messages-page">
+          <div className="page-header">
+            <h1><FiMessageSquare size={24} /> Messages</h1>
       </div>
 
       <div className="messages-layout">
@@ -334,5 +337,7 @@ export default function Messages() {
         </div>
       </div>
     </div>
+  </div>
+</div>
   );
 }

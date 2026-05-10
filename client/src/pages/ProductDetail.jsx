@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -55,13 +55,27 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState({ totalReviews: 0, avgRating: 0 });
   const [canReview, setCanReview] = useState(false);
-  const [eligibleOrders, setEligibleOrders] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '', review_image: null });
   const [submittingReview, setSubmittingReview] = useState(false);
 
   // Seller rating state
   const [sellerRating, setSellerRating] = useState(null);
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      const res = await api.get(`/reviews/product/${id}`);
+      setReviews(res.data.reviews);
+      setReviewStats({ totalReviews: res.data.totalReviews, avgRating: res.data.avgRating });
+    } catch { console.error('Fetch reviews error'); }
+  }, [id]);
+
+  const checkCanReview = useCallback(async () => {
+    try {
+      const res = await api.get(`/reviews/can-review/${id}`);
+      setCanReview(res.data.canReview);
+    } catch { console.error('Check can review error'); }
+  }, [id]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -74,40 +88,30 @@ export default function ProductDetail() {
           try {
             const ratingRes = await api.get(`/reviews/seller/${res.data.product.seller_id}/rating`);
             setSellerRating(ratingRes.data);
-          } catch (e) { /* ignore */ }
+          } catch { /* ignore */ }
         }
-      } catch (err) {
+      } catch {
         toast.error('Product not found');
         navigate('/products');
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
-    fetchReviews();
-  }, [id]);
+    const init = async () => {
+      await fetchProduct();
+      await fetchReviews();
+    };
+    init();
+  }, [id, navigate, fetchReviews]);
 
   useEffect(() => {
-    if (user && product) {
-      checkCanReview();
-    }
-  }, [user, product]);
-
-  const fetchReviews = async () => {
-    try {
-      const res = await api.get(`/reviews/product/${id}`);
-      setReviews(res.data.reviews);
-      setReviewStats({ totalReviews: res.data.totalReviews, avgRating: res.data.avgRating });
-    } catch (err) { console.error('Fetch reviews error:', err); }
-  };
-
-  const checkCanReview = async () => {
-    try {
-      const res = await api.get(`/reviews/can-review/${id}`);
-      setCanReview(res.data.canReview);
-      setCanReview(res.data.canReview);
-    } catch (err) { console.error('Check can review error:', err); }
-  };
+    const check = async () => {
+      if (user && product) {
+        await checkCanReview();
+      }
+    };
+    check();
+  }, [user, product, checkCanReview]);
 
   const handleAddToCart = async () => {
     if (!user) { navigate('/login'); return; }

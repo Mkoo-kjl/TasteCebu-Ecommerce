@@ -30,7 +30,7 @@ export default function Login() {
       toast.success(data.message);
       if (data.user.role === 'admin') navigate('/admin');
       else if (data.user.role === 'seller') navigate('/seller/dashboard');
-      else navigate('/');
+      else navigate('/home');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally {

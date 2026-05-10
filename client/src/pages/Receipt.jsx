@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../utils/api';
-import { FiPrinter, FiDownload, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
+import { FiPrinter, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
 
 export default function Receipt() {
   const { id } = useParams();

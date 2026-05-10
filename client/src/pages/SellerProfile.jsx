@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import ProductCard from '../components/ProductCard';
@@ -30,7 +30,7 @@ export default function SellerProfile() {
         const res = await api.get(`/products/seller/${id}`);
         setSeller(res.data.seller);
         setProducts(res.data.products);
-      } catch (err) {
+      } catch {
         toast.error('Seller not found');
         navigate('/products');
       } finally {

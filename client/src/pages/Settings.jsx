@@ -3,6 +3,7 @@ import api from '../utils/api';
 import { useTheme } from '../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 import { FiSun, FiMoon, FiBell, FiBellOff, FiSave } from 'react-icons/fi';
+import CustomerSidebar from '../components/CustomerSidebar';
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
@@ -35,9 +36,12 @@ export default function Settings() {
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
 
   return (
-    <div className="settings-page" id="settings-page">
-      <div className="page-header">
-        <h1>Settings</h1>
+    <div className="dashboard-layout">
+      <CustomerSidebar activeTab="settings" />
+      <div className="dashboard-main">
+        <div className="settings-page" id="settings-page">
+          <div className="page-header">
+            <h1>Settings</h1>
         <p>Customize your TasteCebu experience</p>
       </div>
 
@@ -75,5 +79,7 @@ export default function Settings() {
         </div>
       </div>
     </div>
+  </div>
+</div>
   );
 }

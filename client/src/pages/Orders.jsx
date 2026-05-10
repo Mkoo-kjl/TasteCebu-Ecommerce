@@ -4,6 +4,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 import { FiPackage, FiClock, FiTruck, FiCheckCircle, FiXCircle, FiStar, FiFileText } from 'react-icons/fi';
+import CustomerSidebar from '../components/CustomerSidebar';
 
 const STATUS_CONFIG = {
   pending: { icon: <FiClock />, color: '#f59e0b', label: 'Pending' },
@@ -59,11 +60,14 @@ export default function Orders() {
   };
 
   return (
-    <div className="orders-page" id="orders-page">
-      <div className="page-header">
-        <h1>My Orders</h1>
-        <p>Track and manage your orders</p>
-      </div>
+    <div className="dashboard-layout">
+      <CustomerSidebar activeTab="orders" />
+      <div className="dashboard-main">
+        <div className="orders-page" id="orders-page">
+          <div className="page-header">
+            <h1>My Orders</h1>
+            <p>Track and manage your orders</p>
+          </div>
 
       <div className="tabs">
         {TABS.map(tab => (
@@ -156,6 +160,8 @@ export default function Orders() {
         confirmText="Cancel Order"
         variant="danger"
       />
+        </div>
+      </div>
     </div>
   );
 }
