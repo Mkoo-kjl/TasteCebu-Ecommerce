@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { FiShoppingCart, FiUser, FiSun, FiMoon, FiMenu, FiX, FiLogOut, FiPackage, FiSettings, FiGrid, FiShield, FiMessageSquare } from 'react-icons/fi';
 import api from '../utils/api';
-import brandIcon from '../assets/pictures/tastecebuicon.jpg';
+import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
 export default function Navbar() {
   const { user, logout } = useAuth();

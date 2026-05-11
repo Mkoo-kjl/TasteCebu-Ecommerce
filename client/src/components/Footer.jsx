@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import brandIcon from '../assets/pictures/tastecebuicon.jpg';
+import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
 export default function Footer() {
   const location = useLocation();

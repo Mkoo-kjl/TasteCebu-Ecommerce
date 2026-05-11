@@ -1,7 +1,7 @@
 import { FiActivity, FiFileText, FiUsers, FiSettings, FiLogOut, FiPackage } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import brandIcon from '../assets/pictures/tastecebuicon.jpg';
+import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
 export default function AdminSidebar({ activeTab, setActiveTab }) {
   const { logout } = useAuth();
