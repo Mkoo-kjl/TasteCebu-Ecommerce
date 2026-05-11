@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SidebarProvider } from './contexts/SidebarContext';
 import App from './App.jsx';
 import './index.css';
 
@@ -11,7 +12,9 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
-          <App />
+          <SidebarProvider>
+            <App />
+          </SidebarProvider>
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
