@@ -102,7 +102,7 @@ export default function Navbar() {
 
           {!isAuthPage && (
             <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
-              {!user && (
+              {(!user || user.role === 'user') && (
                 <Link to="/products" className={`nav-link ${isActive('/products') ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>Products</Link>
               )}
 

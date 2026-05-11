@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import { FiPrinter, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
 
 export default function Receipt() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const backLink = user?.role === 'seller' ? '/seller/dashboard' : '/orders';
+  const backLabel = user?.role === 'seller' ? 'Back to Dashboard' : 'Back to Orders';
   const [receipt, setReceipt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -36,7 +40,7 @@ export default function Receipt() {
           <span className="empty-icon">🧾</span>
           <h2>Receipt Unavailable</h2>
           <p>{error}</p>
-          <Link to="/orders" className="btn btn-primary">Back to Orders</Link>
+          <Link to={backLink} className="btn btn-primary">{backLabel}</Link>
         </div>
       </div>
     );
@@ -52,8 +56,8 @@ export default function Receipt() {
     <div className="receipt-page" id="receipt-page">
       {/* Action bar - hidden on print */}
       <div className="receipt-actions no-print">
-        <Link to="/orders" className="btn btn-ghost">
-          <FiArrowLeft size={16} /> Back to Orders
+        <Link to={backLink} className="btn btn-ghost">
+          <FiArrowLeft size={16} /> {backLabel}
         </Link>
         <div className="receipt-actions-right">
           <button className="btn btn-primary" onClick={handlePrint} id="print-receipt-btn">

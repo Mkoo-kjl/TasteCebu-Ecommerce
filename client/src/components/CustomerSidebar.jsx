@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import brandIcon from '../assets/pictures/tastecebuicon.jpg';
 
 export default function CustomerSidebar({ activeTab }) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isSeller = user?.role === 'seller';
 
   const handleLogout = () => {
     logout();
@@ -13,10 +14,10 @@ export default function CustomerSidebar({ activeTab }) {
   };
 
   const navItems = [
-    { id: 'home', label: 'Dashboard', icon: FiHome, route: '/home' },
-    { id: 'products', label: 'Products', icon: FiShoppingBag, route: '/products' },
+    { id: 'home', label: 'Dashboard', icon: FiHome, route: isSeller ? '/seller/dashboard' : '/home' },
+    ...(!isSeller ? [{ id: 'products', label: 'Products', icon: FiShoppingBag, route: '/products' }] : []),
     { id: 'profile', label: 'My Profile', icon: FiUser, route: '/profile' },
-    { id: 'orders', label: 'My Orders', icon: FiPackage, route: '/orders' },
+    ...(!isSeller ? [{ id: 'orders', label: 'My Orders', icon: FiPackage, route: '/orders' }] : []),
     { id: 'messages', label: 'Messages', icon: FiMessageSquare, route: '/messages' },
   ];
 

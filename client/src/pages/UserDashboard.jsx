@@ -105,7 +105,7 @@ export default function UserDashboard() {
                   <div key={order.id} className="order-card card" style={{ padding: '20px' }}>
                     <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                       <div>
-                        <span className="order-id" style={{ fontWeight: '600', marginRight: '8px' }}>#{order.id.slice(0,8)}</span>
+                        <span className="order-id" style={{ fontWeight: '600', marginRight: '8px' }}>#{String(order.id).slice(0,8)}</span>
                         <span className="order-date" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{new Date(order.created_at).toLocaleDateString()}</span>
                       </div>
                       <span className={`status-badge status-${order.status}`}>{order.status}</span>

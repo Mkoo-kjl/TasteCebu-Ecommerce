@@ -204,7 +204,7 @@ export default function Messages() {
               <div className="conversations-empty">
                 <FiMessageSquare size={32} />
                 <p>{searchTerm ? 'No matches' : 'No conversations yet'}</p>
-                <span>Start a conversation from a seller's profile</span>
+                <span>Start a conversation </span>
               </div>
             ) : (
               filteredConversations.map(conv => (
@@ -250,7 +250,7 @@ export default function Messages() {
             <div className="chat-empty">
               <FiMessageSquare size={48} />
               <h3>Select a conversation</h3>
-              <p>Choose from your existing conversations or start a new one from a seller's profile page</p>
+              <p>Choose from your existing conversations or start a new one</p>
             </div>
           ) : chatLoading && messages.length === 0 ? (
             <div className="loading-screen"><div className="spinner"></div></div>

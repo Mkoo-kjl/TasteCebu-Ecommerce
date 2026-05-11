@@ -40,10 +40,10 @@ function App() {
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/seller/:id" element={<SellerProfile />} />
           <Route path="/messages" element={<ProtectedRoute roles={['user', 'seller']}><Messages /></ProtectedRoute>} />
-          <Route path="/cart" element={<ProtectedRoute roles={['user', 'seller']}><Cart /></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute roles={['user', 'seller']}><Orders /></ProtectedRoute>} />
+          <Route path="/cart" element={<ProtectedRoute roles={['user']}><Cart /></ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute roles={['user']}><Orders /></ProtectedRoute>} />
           <Route path="/orders/:id/receipt" element={<ProtectedRoute roles={['user', 'seller']}><Receipt /></ProtectedRoute>} />
-          <Route path="/home" element={<ProtectedRoute roles={['user', 'seller']}><UserDashboard /></ProtectedRoute>} />
+          <Route path="/home" element={<ProtectedRoute roles={['user']}><UserDashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute roles={['user', 'seller']}><Profile /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute roles={['user', 'seller']}><Settings /></ProtectedRoute>} />
           <Route path="/seller/apply" element={<ProtectedRoute><SellerApply /></ProtectedRoute>} />

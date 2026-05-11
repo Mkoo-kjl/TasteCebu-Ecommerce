@@ -17,7 +17,13 @@ export default function ProtectedRoute({ children, roles }) {
   }
 
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    // Redirect to the user's own dashboard instead of landing page
+    const dashboardMap = {
+      seller: '/seller/dashboard',
+      admin: '/admin',
+      user: '/home',
+    };
+    return <Navigate to={dashboardMap[user.role] || '/'} replace />;
   }
 
   return children;
