@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useNavigate } from 'react-router-dom';
@@ -10,15 +9,12 @@ import {
   TbMessageCircle, 
   TbSettings, 
   TbLogout,
-  TbMenu2,
-  TbX
 } from 'react-icons/tb';
 import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
 export default function CustomerSidebar({ activeTab }) {
-  const { user, logout } = useAuth();
-  const { sidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { logout } = useAuth();
+  const { sidebarOpen, closeSidebar } = useSidebar();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -29,13 +25,7 @@ export default function CustomerSidebar({ activeTab }) {
 
   const handleNavClick = (route) => {
     navigate(route);
-    if (window.innerWidth <= 768) {
-      closeSidebar();
-    }
-  };
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
+    closeSidebar();
   };
 
   const menuItems = [
@@ -54,22 +44,16 @@ export default function CustomerSidebar({ activeTab }) {
     <>
       {/* Sidebar Overlay */}
       <div 
-        className={`sidebar-overlay ${(isExpanded || sidebarOpen) ? 'active' : ''}`} 
-        onClick={() => { setIsExpanded(false); closeSidebar(); }} 
+        className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} 
+        onClick={closeSidebar} 
       />
 
-      <aside className={`dashboard-sidebar ${(isExpanded || sidebarOpen) ? 'expanded' : ''}`}>
-        <div className="sidebar-header" onClick={toggleExpand}>
-          {!(isExpanded || sidebarOpen) ? (
-            <div className="sidebar-brand-collapsed">
-              <img src={brandIcon} alt="L" className="brand-logo-img" />
-            </div>
-          ) : (
-            <div className="sidebar-brand-expanded">
-              <img src={brandIcon} alt="TasteCebu" className="brand-logo-img" />
-              <span>Taste Cebu</span>
-            </div>
-          )}
+      <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <div className="sidebar-brand-expanded">
+            <img src={brandIcon} alt="TasteCebu" className="brand-logo-img" />
+            <span>Taste Cebu</span>
+          </div>
         </div>
 
         <nav className="sidebar-nav">
@@ -80,10 +64,9 @@ export default function CustomerSidebar({ activeTab }) {
                 key={item.id}
                 className={`sidebar-nav-item ${activeTab === item.id ? 'active' : ''}`}
                 onClick={() => handleNavClick(item.route)}
-                title={item.label}
               >
                 <div className="nav-icon"><Icon /></div>
-                <span>{item.label}</span>
+                <span className="nav-label">{item.label}</span>
               </button>
             );
           })}
@@ -97,20 +80,18 @@ export default function CustomerSidebar({ activeTab }) {
                 key={item.id}
                 className={`sidebar-nav-item ${activeTab === item.id ? 'active' : ''}`}
                 onClick={() => handleNavClick(item.route)}
-                title={item.label}
               >
                 <div className="nav-icon"><Icon /></div>
-                <span>{item.label}</span>
+                <span className="nav-label">{item.label}</span>
               </button>
             );
           })}
           <button 
-            className="sidebar-nav-item" 
+            className="sidebar-nav-item logout-nav-item" 
             onClick={handleLogout}
-            title="Logout"
           >
             <div className="nav-icon"><TbLogout /></div>
-            <span>Logout</span>
+            <span className="nav-label">Logout</span>
           </button>
         </div>
       </aside>
