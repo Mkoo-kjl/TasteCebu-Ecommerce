@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { FiUser, FiMail, FiLock, FiPhone, FiEye, FiEyeOff, FiHelpCircle } from 'react-icons/fi';
+import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
 const SECURITY_QUESTIONS = [
   'What is the name of your favorite city?',
@@ -61,7 +62,7 @@ export default function Register() {
     <div className="auth-page" id="register-page">
       <div className="auth-card auth-card-wide">
         <div className="auth-header">
-          <span className="auth-icon">🍽️</span>
+          <img src={brandIcon} alt="TasteCebu Logo" className="auth-brand-icon" />
           <h1>Create Account</h1>
           <p>Join TasteCebu and start shopping</p>
         </div>

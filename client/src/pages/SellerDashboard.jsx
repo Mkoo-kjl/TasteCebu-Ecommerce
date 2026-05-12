@@ -565,7 +565,7 @@ export default function SellerDashboard() {
                     data={{
                       labels: analytics.monthlyRevenue.map(r => r.month),
                       datasets: [{
-                        label: 'Revenue (₱)',
+                        label: 'Revenue (PHP)',
                         data: analytics.monthlyRevenue.map(r => Number(r.revenue)),
                         backgroundColor: '#10b981',
                         borderRadius: 6,
@@ -573,7 +573,7 @@ export default function SellerDashboard() {
                     }}
                     options={{
                       responsive: true, maintainAspectRatio: false,
-                      scales: { y: { type: 'linear', display: true, position: 'left', ticks: { callback: (value) => '₱' + value } } }
+                      scales: { y: { type: 'linear', display: true, position: 'left', ticks: { callback: (value) => 'PHP ' + value } } }
                     }}
                   />
                 )}

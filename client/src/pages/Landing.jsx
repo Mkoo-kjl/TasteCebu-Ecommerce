@@ -170,7 +170,7 @@ export default function Landing() {
 
           <h1 className="lp-hero-title stagger-2">
             Authentic Cebuano<br />
-            <span className="lp-title-accent">Delicacies</span> Delivered
+            <span className="lp-title-accent">Delicacies </span> Delivered
             <span className="lp-title-dot">.</span>
           </h1>
 
@@ -244,7 +244,7 @@ export default function Landing() {
       <section className="lp-categories" id="categories-section">
         <div className="lp-section-header">
           <span className="lp-section-eyebrow">SHOP BY CATEGORY</span>
-          <h2>Explore <span className="lp-title-accent">Cebuano</span> Favorites</h2>
+          <h2>Explore <span className="lp-title-accent">Cebuano </span> Favorites</h2>
           <p>Browse through our curated collection of authentic local delicacies</p>
         </div>
 
@@ -266,7 +266,7 @@ export default function Landing() {
         <div className="lp-how-inner">
           <div className="lp-section-header">
             <span className="lp-section-eyebrow">HOW IT WORKS</span>
-            <h2>Three Steps to <span className="lp-title-accent">Deliciousness</span></h2>
+            <h2>Three Steps to <span className="lp-title-accent">Deliciousness </span></h2>
           </div>
 
           <div className="lp-steps">
@@ -315,7 +315,7 @@ export default function Landing() {
       <section className="lp-testimonials" id="testimonials-section">
         <div className="lp-section-header">
           <span className="lp-section-eyebrow">WHAT PEOPLE SAY</span>
-          <h2>Loved by <span className="lp-title-accent">Thousands</span></h2>
+          <h2>Loved by <span className="lp-title-accent">Thousands </span></h2>
         </div>
 
         <div className="lp-testimonials-carousel">
@@ -385,7 +385,7 @@ export default function Landing() {
       {/* ═══════ FINAL CTA ═══════ */}
       <section className="lp-final-cta" id="final-cta">
         <div className="lp-final-inner">
-          <h2>Ready to taste <span className="lp-title-accent">Cebu</span>?</h2>
+          <h2>Ready to taste <span className="lp-title-accent">Cebu </span>?</h2>
           <p>Join thousands of happy customers enjoying authentic Cebuano flavors.</p>
           <Link to="/register" className="btn btn-primary btn-lg lp-btn-glow">
             Get Started — It's Free <FiArrowRight className="btn-icon-right" />

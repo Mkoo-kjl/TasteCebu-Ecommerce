@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
+import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -42,7 +43,7 @@ export default function Login() {
     <div className="auth-page" id="login-page">
       <div className="auth-card">
         <div className="auth-header">
-          <span className="auth-icon">🍽️</span>
+          <img src={brandIcon} alt="TasteCebu Logo" className="auth-brand-icon" />
           <h1>Welcome Back</h1>
           <p>Sign in to your TasteCebu account</p>
         </div>

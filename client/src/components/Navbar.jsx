@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSidebar } from '../contexts/SidebarContext';
 import { FiShoppingCart, FiUser, FiSun, FiMoon, FiMenu, FiX, FiLogOut, FiPackage, FiSettings, FiGrid, FiShield, FiMessageSquare } from 'react-icons/fi';
 import api from '../utils/api';
 import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
@@ -9,6 +10,7 @@ import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { toggleSidebar } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,6 +50,8 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
   const isLanding = location.pathname === '/';
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname);
+  const isDashboardPage = ['/admin', '/seller/dashboard', '/home'].includes(location.pathname)
+    || location.pathname.startsWith('/admin') || location.pathname.startsWith('/seller/dashboard');
 
   if (isLanding) {
     return (
@@ -94,6 +98,11 @@ export default function Navbar() {
       </div>
       <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} id="main-navbar">
         <div className="navbar-container">
+          {isDashboardPage && (
+            <button className="sidebar-mobile-toggle" onClick={toggleSidebar} aria-label="Toggle sidebar menu" id="sidebar-toggle-btn">
+              <FiMenu size={22} />
+            </button>
+          )}
           <Link to="/" className="navbar-brand" id="nav-brand">
             <img src={brandIcon} alt="TasteCebu Logo" className="brand-logo-img" />
             <span className="brand-taste">TASTE</span>
