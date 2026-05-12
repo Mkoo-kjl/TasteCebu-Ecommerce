@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import CustomerSidebar from '../components/CustomerSidebar';
+
 import { 
   TbPackage, 
   TbMessageCircle, 

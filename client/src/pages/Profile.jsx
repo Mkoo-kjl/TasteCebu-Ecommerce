@@ -3,7 +3,7 @@ import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiLock, FiCamera, FiSave } from 'react-icons/fi';
-import CustomerSidebar from '../components/CustomerSidebar';
+
 
 export default function Profile() {
   const { user, refreshUser } = useAuth();
@@ -163,6 +163,5 @@ export default function Profile() {
       )}
         </div>
       </div>
-    </div>
   );
 }

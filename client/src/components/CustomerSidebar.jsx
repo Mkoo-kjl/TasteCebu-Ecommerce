@@ -11,7 +11,7 @@ import {
   TbLogout,
   TbUsers,
   TbFileText,
-  TbStore,
+  TbBuildingStore,
   TbChartBar
 } from 'react-icons/tb';
 import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
@@ -49,7 +49,7 @@ export default function CustomerSidebar({ activeTab }) {
     if (role === 'seller') {
       return [
         { id: 'home', label: 'Dashboard', icon: TbLayoutDashboard, route: '/seller/dashboard?tab=analytics' },
-        { id: 'products', label: 'My Products', icon: TbStore, route: '/seller/dashboard?tab=products' },
+        { id: 'products', label: 'My Products', icon: TbBuildingStore, route: '/seller/dashboard?tab=products' },
         { id: 'orders', label: 'Shop Orders', icon: TbPackage, route: '/seller/dashboard?tab=orders' },
         { id: 'messages', label: 'Messages', icon: TbMessageCircle, route: '/messages' },
         { id: 'profile', label: 'Profile', icon: TbUserCircle, route: '/profile' },

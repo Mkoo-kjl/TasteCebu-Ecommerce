@@ -4,7 +4,7 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 import { FiPackage, FiClock, FiTruck, FiCheckCircle, FiXCircle, FiStar, FiFileText } from 'react-icons/fi';
-import CustomerSidebar from '../components/CustomerSidebar';
+
 
 const STATUS_CONFIG = {
   pending: { icon: <FiClock />, color: '#f59e0b', label: 'Pending' },
@@ -160,6 +160,5 @@ export default function Orders() {
       />
         </div>
       </div>
-    </div>
   );
 }

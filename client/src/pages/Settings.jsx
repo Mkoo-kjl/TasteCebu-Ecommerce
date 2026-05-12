@@ -3,7 +3,7 @@ import api from '../utils/api';
 import { useTheme } from '../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 import { FiSun, FiMoon, FiBell, FiBellOff, FiSave } from 'react-icons/fi';
-import CustomerSidebar from '../components/CustomerSidebar';
+
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
@@ -78,6 +78,5 @@ export default function Settings() {
       </div>
     </div>
   </div>
-</div>
   );
 }

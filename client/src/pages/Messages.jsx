@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { FiSend, FiMessageSquare, FiArrowLeft, FiSearch, FiCheck, FiCheckCircle } from 'react-icons/fi';
-import CustomerSidebar from '../components/CustomerSidebar';
+
 
 export default function Messages() {
   const { user } = useAuth();
@@ -336,6 +336,5 @@ export default function Messages() {
       </div>
     </div>
   </div>
-</div>
   );
 }

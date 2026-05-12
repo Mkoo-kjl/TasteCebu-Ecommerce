@@ -21,14 +21,18 @@ import SellerProfile from './pages/SellerProfile';
 import Messages from './pages/Messages';
 import UserDashboard from './pages/UserDashboard';
 import CustomerSidebar from './components/CustomerSidebar';
+import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
 function App() {
+  const { user } = useAuth();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   
-  const isDashboardPage = ['/admin', '/seller/dashboard', '/home'].includes(location.pathname)
-    || location.pathname.startsWith('/admin') || location.pathname.startsWith('/seller/dashboard');
+  // Dashboard mode applies to all authenticated pages
+  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname);
+  const isLandingPage = location.pathname === '/';
+  const isDashboardPage = user && !isAuthPage && !isLandingPage;
 
   // Derive active tab for sidebar
   const getActiveTab = () => {
@@ -54,7 +58,7 @@ function App() {
         style: { borderRadius: '12px', background: 'var(--card-bg)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' },
       }} />
       <Navbar />
-      <CustomerSidebar activeTab={getActiveTab()} />
+      {user && <CustomerSidebar activeTab={getActiveTab()} />}
       <main className={`main-content ${isDashboardPage ? 'dashboard-mode' : ''}`}>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -76,7 +80,7 @@ function App() {
           <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
         </Routes>
       </main>
-      {!isDashboardPage && <Footer />}
+      {!isDashboardPage && !isAuthPage && <Footer />}
     </div>
   );
 }

@@ -50,8 +50,7 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
   const isLanding = location.pathname === '/';
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname);
-  const isDashboardPage = ['/admin', '/seller/dashboard', '/home'].includes(location.pathname)
-    || location.pathname.startsWith('/admin') || location.pathname.startsWith('/seller/dashboard');
+  const isDashboardPage = user && !isAuthPage && !isLanding;
 
   if (isLanding) {
     return (
