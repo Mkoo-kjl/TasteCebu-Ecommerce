@@ -42,9 +42,6 @@ export default function ProductCard({ product }) {
             <div className="product-placeholder">🍽️</div>
           )}
           <span className="product-category-badge">{product.category}</span>
-          <button className="product-wishlist-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} aria-label="Add to wishlist">
-            <FiHeart size={16} />
-          </button>
         </div>
         <div className="product-card-info">
           <h3 className="product-card-name">{product.name}</h3>

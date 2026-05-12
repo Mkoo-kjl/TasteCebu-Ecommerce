@@ -336,11 +336,12 @@
   top: 72px; /* Navbar height */
   z-index: 1000;
   transform: translateX(-100%);
-  box-shadow: 10px 0 30px rgba(28, 16, 9, 0.05);
+  box-shadow: none;
 }
 
 .dashboard-sidebar.open {
   transform: translateX(0);
+  box-shadow: 10px 0 30px rgba(28, 16, 9, 0.1);
 }
 
 .sidebar-overlay {
@@ -432,12 +433,6 @@
 
 .sidebar-nav-item span {
   white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.expanded .sidebar-nav-item span {
-  opacity: 1;
 }
 
 .sidebar-nav-item:hover {
