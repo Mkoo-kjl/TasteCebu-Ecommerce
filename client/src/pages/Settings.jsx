@@ -36,9 +36,7 @@ export default function Settings() {
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
 
   return (
-    <div className="dashboard-layout">
-      <CustomerSidebar activeTab="settings" />
-      <div className="dashboard-main">
+    <div className="dashboard-main-standalone" id="settings-page">
         <div className="settings-page" id="settings-page">
           <div className="page-header">
             <h1>Settings</h1>

@@ -87,10 +87,13 @@ function StarDisplay({ rating, size = 14 }) {
   );
 }
 
+import { useSearchParams } from 'react-router-dom';
+
 export default function SellerDashboard() {
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('products');
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'analytics';
   const [sellerPlan, setSellerPlan] = useState('basic');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -344,7 +347,7 @@ export default function SellerDashboard() {
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
 
   return (
-    <div className="seller-dashboard" id="seller-dashboard">
+    <div className="dashboard-main-standalone" id="seller-dashboard">
       <div className="page-header">
         <div>
           <h1>Seller Dashboard</h1>
@@ -354,7 +357,7 @@ export default function SellerDashboard() {
           <span className="badge" style={{ background: '#3b82f6', color: '#fff', padding: '5px 10px', borderRadius: '12px', fontSize: '0.8rem', textTransform: 'uppercase' }}>
             {sellerPlan} Plan
           </span>
-          {activeTab === 'products' && (
+          {(activeTab === 'products' || activeTab === 'analytics') && (
             <button 
               className="btn btn-primary" 
               onClick={openCreateModal} 
@@ -368,19 +371,6 @@ export default function SellerDashboard() {
           <button className="btn btn-danger" onClick={() => setTerminateConfirm(true)}>
             <FiX size={16} /> Terminate
           </button>
-        </div>
-      </div>
-
-      <div className="tabs">
-        <button className={`tab ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>
-          <FiPackage size={14} /> Products
-        </button>
-        <button className={`tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-          <FiShoppingBag size={14} /> Orders
-        </button>
-        <button className={`tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
-          <FiBarChart2 size={14} /> Analytics
-        </button>
       </div>
 
       {/* PRODUCTS TAB */}

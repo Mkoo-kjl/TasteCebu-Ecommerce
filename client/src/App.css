@@ -446,8 +446,37 @@
 }
 
 .sidebar-footer {
-  padding: 12px 8px;
+  padding: 12px;
   border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-role-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-color);
+  padding: 4px 12px;
+  background: rgba(232, 93, 44, 0.1);
+  border-radius: 20px;
+  margin-left: auto;
+}
+
+.dashboard-main-standalone {
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .dashboard-main-standalone {
+    padding: 20px;
+  }
+}
   display: flex;
   flex-direction: column;
   gap: 4px;

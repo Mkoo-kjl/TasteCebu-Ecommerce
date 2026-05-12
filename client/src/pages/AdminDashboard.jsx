@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { FiUsers, FiFileText, FiCheck, FiX, FiClock, FiDollarSign, FiUserPlus, FiActivity, FiAlertTriangle, FiSlash, FiShoppingBag, FiDownload } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
 import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
-import AdminSidebar from '../components/AdminSidebar';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -35,7 +35,8 @@ ChartJS.register(
 );
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('analytics');
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'analytics';
   const [analytics, setAnalytics] = useState(null);
   const [applications, setApplications] = useState([]);
   const [users, setUsers] = useState([]);
@@ -257,9 +258,7 @@ export default function AdminDashboard() {
   const pendingApplicants = applications.filter(a => a.status === 'pending').length;
 
   return (
-    <div className="dashboard-layout">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <div className="dashboard-main">
+    <div className="dashboard-main-standalone">
         <div className="page-header">
           <div>
             <h1>Admin Dashboard</h1>
@@ -658,7 +657,6 @@ export default function AdminDashboard() {
           confirmText="Terminate"
           variant="danger"
         />
-      </div>
     </div>
   );
 }

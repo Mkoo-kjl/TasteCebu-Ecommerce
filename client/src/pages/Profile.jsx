@@ -79,9 +79,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="dashboard-layout">
-      <CustomerSidebar activeTab="profile" />
-      <div className="dashboard-main">
+    <div className="dashboard-main-standalone" id="profile-page">
         <div className="profile-page" id="profile-page">
           <div className="page-header">
             <h1>My Profile</h1>

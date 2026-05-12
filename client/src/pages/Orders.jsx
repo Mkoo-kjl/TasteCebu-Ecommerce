@@ -60,9 +60,7 @@ export default function Orders() {
   };
 
   return (
-    <div className="dashboard-layout">
-      <CustomerSidebar activeTab="orders" />
-      <div className="dashboard-main">
+    <div className="dashboard-main-standalone" id="orders-page">
         <div className="orders-page" id="orders-page">
           <div className="page-header">
             <h1>My Orders</h1>

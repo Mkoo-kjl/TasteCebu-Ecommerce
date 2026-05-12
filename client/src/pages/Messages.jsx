@@ -178,9 +178,7 @@ export default function Messages() {
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
 
   return (
-    <div className="dashboard-layout">
-      <CustomerSidebar activeTab="messages" />
-      <div className="dashboard-main">
+    <div className="dashboard-main-standalone" id="messages-page">
         <div className="messages-page" id="messages-page">
           <div className="page-header">
             <h1><FiMessageSquare size={24} /> Messages</h1>
