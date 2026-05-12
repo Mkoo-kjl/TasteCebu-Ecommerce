@@ -13,6 +13,12 @@
   padding: 24px 20px 60px;
 }
 
+.main-content.dashboard-mode {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 .footer {
   background: var(--nav-bg);
   border-top: 1px solid var(--border-color);
@@ -62,7 +68,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 20px;
+}
+
+.navbar-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navbar-sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.navbar-sidebar-toggle:hover {
+  background: var(--bg-tertiary);
+  color: var(--primary);
 }
 
 /* Global Brand Styling */
@@ -295,14 +325,14 @@
 
 .dashboard-sidebar {
   width: 56px;
-  height: 100vh;
+  height: calc(100vh - 72px);
   background: #ffffff;
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: sticky;
-  top: 0;
+  top: 72px; /* Navbar height */
   z-index: 100;
   overflow: hidden;
 }

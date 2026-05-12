@@ -98,16 +98,18 @@ export default function Navbar() {
       </div>
       <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} id="main-navbar">
         <div className="navbar-container">
-          {isDashboardPage && (
-            <button className="sidebar-mobile-toggle" onClick={toggleSidebar} aria-label="Toggle sidebar menu" id="sidebar-toggle-btn">
-              <FiMenu size={22} />
-            </button>
-          )}
-          <Link to="/" className="navbar-brand" id="nav-brand">
-            <img src={brandIcon} alt="TasteCebu Logo" className="brand-logo-img" />
-            <span className="brand-taste">TASTE</span>
-            <span className="brand-cebu">CEBU</span>
-          </Link>
+          <div className="navbar-brand-group">
+            {isDashboardPage && (
+              <button className="navbar-sidebar-toggle" onClick={toggleSidebar} aria-label="Toggle sidebar menu" id="sidebar-toggle-btn">
+                <FiMenu size={22} />
+              </button>
+            )}
+            <Link to="/" className="navbar-brand" id="nav-brand">
+              <img src={brandIcon} alt="TasteCebu Logo" className="brand-logo-img" />
+              <span className="brand-taste">TASTE</span>
+              <span className="brand-cebu">CEBU</span>
+            </Link>
+          </div>
 
           {!isAuthPage && (
             <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>

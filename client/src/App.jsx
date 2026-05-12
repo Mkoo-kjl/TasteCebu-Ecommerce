@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -23,6 +23,10 @@ import UserDashboard from './pages/UserDashboard';
 import './App.css';
 
 function App() {
+  const location = useLocation();
+  const isDashboardPage = ['/admin', '/seller/dashboard', '/home'].includes(location.pathname)
+    || location.pathname.startsWith('/admin') || location.pathname.startsWith('/seller/dashboard');
+
   return (
     <div className="app-wrapper">
       <Toaster position="top-right" toastOptions={{
@@ -30,7 +34,7 @@ function App() {
         style: { borderRadius: '12px', background: 'var(--card-bg)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' },
       }} />
       <Navbar />
-      <main className="main-content">
+      <main className={`main-content ${isDashboardPage ? 'dashboard-mode' : ''}`}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -51,7 +55,7 @@ function App() {
           <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
         </Routes>
       </main>
-      <Footer />
+      {!isDashboardPage && <Footer />}
     </div>
   );
 }
