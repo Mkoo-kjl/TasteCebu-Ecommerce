@@ -326,7 +326,7 @@
 .dashboard-sidebar {
   width: 260px;
   height: calc(100vh - 72px);
-  background: #ffffff;
+  background: #ffffff !important;
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -337,6 +337,8 @@
   z-index: 1000;
   transform: translateX(-100%);
   box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .dashboard-sidebar.open {
@@ -347,9 +349,9 @@
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  top: 72px; /* Stay below navbar */
-  background: rgba(28, 16, 9, 0.2);
-  backdrop-filter: blur(4px);
+  top: 0;
+  background: rgba(28, 16, 9, 0.45);
+  backdrop-filter: blur(6px);
   z-index: 999;
   opacity: 0;
   pointer-events: none;
@@ -466,7 +468,7 @@
 }
 
 .dashboard-main-standalone {
-  padding: 40px;
+  padding: 16px 40px 40px;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
@@ -474,7 +476,7 @@
 
 @media (max-width: 768px) {
   .dashboard-main-standalone {
-    padding: 20px;
+    padding: 12px 20px 20px;
   }
 }
 
@@ -5836,7 +5838,7 @@ html {
 
 /* Dark mode fixes */
 [data-theme="dark"] .dashboard-sidebar {
-  background: var(--bg-secondary);
+  background: var(--bg-secondary) !important;
   border-color: var(--border-color);
 }
 
