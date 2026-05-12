@@ -1,14 +1,25 @@
-import { FiUser, FiPackage, FiSettings, FiLogOut, FiMessageSquare, FiHome, FiShoppingBag } from 'react-icons/fi';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useNavigate } from 'react-router-dom';
+import { 
+  TbLayoutDashboard, 
+  TbPaperBag, 
+  TbUserCircle, 
+  TbPackage, 
+  TbMessageCircle, 
+  TbSettings, 
+  TbLogout,
+  TbMenu2,
+  TbX
+} from 'react-icons/tb';
 import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
 export default function CustomerSidebar({ activeTab }) {
   const { user, logout } = useAuth();
-  const { sidebarOpen, closeSidebar } = useSidebar();
+  const { sidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
+  const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
-  const isSeller = user?.role === 'seller';
 
   const handleLogout = () => {
     logout();
@@ -18,58 +29,91 @@ export default function CustomerSidebar({ activeTab }) {
 
   const handleNavClick = (route) => {
     navigate(route);
-    closeSidebar();
+    if (window.innerWidth <= 768) {
+      closeSidebar();
+    }
   };
 
-  const navItems = [
-    { id: 'home', label: 'Dashboard', icon: FiHome, route: isSeller ? '/seller/dashboard' : '/home' },
-    ...(!isSeller ? [{ id: 'products', label: 'Products', icon: FiShoppingBag, route: '/products' }] : []),
-    { id: 'profile', label: 'My Profile', icon: FiUser, route: '/profile' },
-    ...(!isSeller ? [{ id: 'orders', label: 'My Orders', icon: FiPackage, route: '/orders' }] : []),
-    { id: 'messages', label: 'Messages', icon: FiMessageSquare, route: '/messages' },
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  const menuItems = [
+    { id: 'home', label: 'Dashboard', icon: TbLayoutDashboard, route: '/home' },
+    { id: 'products', label: 'Products', icon: TbPaperBag, route: '/products' },
+    { id: 'profile', label: 'My Profile', icon: TbUserCircle, route: '/profile' },
+    { id: 'orders', label: 'My Orders', icon: TbPackage, route: '/orders' },
+    { id: 'messages', label: 'Messages', icon: TbMessageCircle, route: '/messages' },
+  ];
+
+  const bottomItems = [
+    { id: 'settings', label: 'Settings', icon: TbSettings, route: '/settings' },
   ];
 
   return (
     <>
-      {sidebarOpen && <div className="sidebar-overlay" onClick={closeSidebar} />}
-      <div className={`dashboard-sidebar ${sidebarOpen ? 'mobile-open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="sidebar-brand">
-            <img src={brandIcon} alt="TasteCebu Logo" className="brand-logo-img" />
-            <span className="brand-taste">TASTE</span>
-            <span className="brand-cebu">CEBU</span>
-          </div>
-          <p className="sidebar-subtitle">Customer Portal</p>
+      {/* Sidebar Overlay */}
+      <div 
+        className={`sidebar-overlay ${(isExpanded || sidebarOpen) ? 'active' : ''}`} 
+        onClick={() => { setIsExpanded(false); closeSidebar(); }} 
+      />
+
+      <aside className={`dashboard-sidebar ${(isExpanded || sidebarOpen) ? 'expanded' : ''}`}>
+        <div className="sidebar-header" onClick={toggleExpand}>
+          {!(isExpanded || sidebarOpen) ? (
+            <div className="sidebar-brand-collapsed">
+              <img src={brandIcon} alt="L" className="brand-logo-img" />
+            </div>
+          ) : (
+            <div className="sidebar-brand-expanded">
+              <img src={brandIcon} alt="TasteCebu" className="brand-logo-img" />
+              <span>Taste Cebu</span>
+            </div>
+          )}
         </div>
 
         <nav className="sidebar-nav">
-          {navItems.map(item => {
+          {menuItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
                 className={`sidebar-nav-item ${activeTab === item.id ? 'active' : ''}`}
                 onClick={() => handleNavClick(item.route)}
+                title={item.label}
               >
-                <Icon className="nav-icon" />
-                {item.label}
+                <div className="nav-icon"><Icon /></div>
+                <span>{item.label}</span>
               </button>
             );
           })}
         </nav>
 
         <div className="sidebar-footer">
+          {bottomItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                className={`sidebar-nav-item ${activeTab === item.id ? 'active' : ''}`}
+                onClick={() => handleNavClick(item.route)}
+                title={item.label}
+              >
+                <div className="nav-icon"><Icon /></div>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
           <button 
-            className={`sidebar-nav-item ${activeTab === 'settings' ? 'active' : ''}`} 
-            onClick={() => handleNavClick('/settings')}
+            className="sidebar-nav-item" 
+            onClick={handleLogout}
+            title="Logout"
           >
-            <FiSettings className="nav-icon" /> Settings
-          </button>
-          <button className="sidebar-nav-item text-danger" onClick={() => { handleLogout(); }}>
-            <FiLogOut className="nav-icon" /> Logout
+            <div className="nav-icon"><TbLogout /></div>
+            <span>Logout</span>
           </button>
         </div>
-      </div>
+      </aside>
     </>
   );
 }

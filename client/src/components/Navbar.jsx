@@ -111,10 +111,6 @@ export default function Navbar() {
 
           {!isAuthPage && (
             <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
-              {(!user || user.role === 'user') && (
-                <Link to="/products" className={`nav-link ${isActive('/products') ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>Products</Link>
-              )}
-
               {user && user.role === 'seller' && (
                 <Link to="/seller/dashboard" className={`nav-link ${isActive('/seller/dashboard') ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
                   <FiGrid size={14} /> Seller

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Nunito:wght@300;400;500;600;700;800;900&family=Bebas+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;700&family=Bebas+Neue&display=swap');
 
 /* ═══════════════════════════════════════════════
    TASTECEBU — DESIGN SYSTEM
@@ -8,40 +8,40 @@
 :root,
 [data-theme="light"] {
   /* ── Brand Colors ── */
-  --color-primary: #C8202A;
+  --color-primary: #E85D2C; /* Accent */
   --color-secondary: #F4A300;
-  --color-accent: #2D6A4F;
-  --color-bg: #FFF8F0;
-  --color-surface: #FDE8D0;
-  --color-text: #1C1108;
+  --color-accent: #E85D2C;
+  --color-bg: #FAF3EC; /* Background */
+  --color-surface: #FDF0E0;
+  --color-text: #1C1009; /* Dark text */
   --color-muted: #8B4513;
-  --color-dark: #2C1A0E;
+  --color-dark: #1C1009;
 
   /* ── Semantic Tokens ── */
-  --bg-primary: #FFF8F0;
+  --bg-primary: #FAF3EC;
   --bg-secondary: #ffffff;
   --bg-tertiary: #FDF0E0;
-  --bg-body-gradient: linear-gradient(170deg, #FFF8F0 0%, #FDE8D0 40%, #FFF3E4 70%, #FFF8F0 100%);
+  --bg-body-gradient: linear-gradient(170deg, #FAF3EC 0%, #FDF0E0 100%);
   --card-bg: rgba(255,255,255,0.88);
   --card-bg-solid: #ffffff;
-  --card-hover: rgba(253,232,208,0.5);
-  --text-primary: #1C1108;
-  --text-secondary: #5C3A1E;
+  --card-hover: rgba(232,93,44,0.05);
+  --text-primary: #1C1009;
+  --text-secondary: #3C2A21;
   --text-muted: #8B4513;
-  --border-color: rgba(139,69,19,0.12);
-  --border-hover: rgba(139,69,19,0.25);
+  --border-color: rgba(28,16,9,0.1);
+  --border-hover: rgba(232,93,44,0.2);
 
-  --primary: #C8202A;
-  --primary-hover: #961519;
-  --primary-light: rgba(200,32,42,0.07);
-  --primary-border: rgba(200,32,42,0.18);
-  --primary-glow: rgba(200,32,42,0.10);
-  --accent: #F4A300;
-  --accent-light: rgba(244,163,0,0.08);
+  --primary: #E85D2C;
+  --primary-hover: #D34D21;
+  --primary-light: rgba(232,93,44,0.1);
+  --primary-border: rgba(232,93,44,0.2);
+  --primary-glow: rgba(232,93,44,0.15);
+  --accent: #E85D2C;
+  --accent-light: rgba(232,93,44,0.08);
   --success: #2D6A4F;
   --success-light: rgba(45,106,79,0.07);
-  --danger: #C8202A;
-  --danger-light: rgba(200,32,42,0.07);
+  --danger: #C0392B; /* CTA Red */
+  --danger-light: rgba(192,57,43,0.1);
   --warning: #E67E00;
   --warning-light: rgba(230,126,0,0.07);
   --info: #1B6B93;
@@ -59,10 +59,10 @@
   --radius-xl: 28px;
   --radius-btn: 50px;
 
-  --nav-bg: rgba(255,248,240,0.92);
-  --nav-border: rgba(139,69,19,0.08);
-  --glass-bg: rgba(255,255,255,0.55);
-  --glass-border: rgba(139,69,19,0.10);
+  --nav-bg: rgba(250, 243, 236, 0.95);
+  --nav-border: rgba(28, 16, 9, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(28, 16, 9, 0.1);
   --glass-blur: 20px;
 
   --dot-color: rgba(214,40,40,0.025);
@@ -115,7 +115,7 @@
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 
 body {
-  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   background: var(--bg-body-gradient);
   background-attachment: fixed;
   color: var(--text-secondary);
@@ -205,7 +205,7 @@ h3 { font-size: 1.2rem; }
   text-decoration: none; white-space: nowrap;
   letter-spacing: 0.03em;
   position: relative; overflow: hidden;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'DM Sans', sans-serif;
 }
 .btn::after {
   content: '';
@@ -224,16 +224,16 @@ h3 { font-size: 1.2rem; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-primary {
-  background: linear-gradient(135deg, #D62828, #B71E1E);
+  background: #C0392B;
   color: #fff;
-  box-shadow: 0 4px 18px rgba(214,40,40,0.30), inset 0 1px 0 rgba(255,255,255,0.15);
+  box-shadow: 0 4px 18px rgba(192,57,43,0.30), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #E83030, #D62828);
+  background: #A93226;
   transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 30px rgba(214,40,40,0.40);
+  box-shadow: 0 8px 30px rgba(192,57,43,0.40);
 }
-.btn-primary:active:not(:disabled) { transform: translateY(0); box-shadow: 0 2px 8px rgba(214,40,40,0.25); }
+.btn-primary:active:not(:disabled) { transform: translateY(0); box-shadow: 0 2px 8px rgba(192,57,43,0.25); }
 
 .btn-outline {
   background: transparent; color: var(--primary);
