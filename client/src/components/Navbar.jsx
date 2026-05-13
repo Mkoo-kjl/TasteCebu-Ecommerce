@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSidebar } from '../contexts/SidebarContext';
-import { FiShoppingCart, FiUser, FiSun, FiMoon, FiMenu, FiX, FiLogOut, FiPackage, FiSettings, FiGrid, FiShield, FiMessageSquare } from 'react-icons/fi';
+import { FiShoppingCart, FiUser, FiSun, FiMoon, FiMenu, FiX, FiLogOut, FiPackage, FiSettings, FiMessageSquare } from 'react-icons/fi';
 import api from '../utils/api';
 import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
@@ -111,20 +111,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {!isAuthPage && (
-            <div className={`navbar-links ${mobileOpen ? 'open' : ''}`}>
-              {user && user.role === 'seller' && (
-                <Link to="/seller/dashboard" className={`nav-link ${isActive('/seller/dashboard') ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
-                  <FiGrid size={14} /> Seller
-                </Link>
-              )}
-              {user && user.role === 'admin' && (
-                <Link to="/admin" className={`nav-link ${isActive('/admin') ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
-                  <FiShield size={14} /> Admin
-                </Link>
-              )}
-            </div>
-          )}
+
 
           <div className="navbar-actions">
             <button className="theme-toggle" onClick={toggleTheme} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} id="theme-toggle-btn">

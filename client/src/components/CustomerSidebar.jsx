@@ -15,7 +15,7 @@ import {
   TbChartBar,
   TbX
 } from 'react-icons/tb';
-import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
+
 
 export default function CustomerSidebar({ activeTab }) {
   const { user, logout } = useAuth();
@@ -43,7 +43,6 @@ export default function CustomerSidebar({ activeTab }) {
         { id: 'applications', label: 'Applications', icon: TbFileText, route: '/admin?tab=applications' },
         { id: 'users', label: 'Users', icon: TbUsers, route: '/admin?tab=users' },
         { id: 'products', label: 'Platform Products', icon: TbPackage, route: '/admin?tab=products' },
-        { id: 'messages', label: 'Messages', icon: TbMessageCircle, route: '/messages' },
       ];
     }
 
@@ -86,16 +85,6 @@ export default function CustomerSidebar({ activeTab }) {
         <button className="sidebar-mobile-close" onClick={closeMobileSidebar} aria-label="Close sidebar">
           <TbX size={20} />
         </button>
-
-        <div className="sidebar-header">
-          <div className="sidebar-brand-expanded">
-            <img src={brandIcon} alt="TasteCebu" className="brand-logo-img" />
-            <span>Taste Cebu</span>
-          </div>
-          {user?.role !== 'user' && (
-            <p className="sidebar-role-tag">{user.role.charAt(0).toUpperCase() + user.role.slice(1)} Portal</p>
-          )}
-        </div>
 
         <nav className="sidebar-nav">
           {menuItems.map((item) => {
