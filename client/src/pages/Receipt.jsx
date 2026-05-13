@@ -35,6 +35,7 @@ export default function Receipt() {
 
   if (error) {
     return (
+      <div className="dashboard-main-standalone">
       <div className="receipt-page" id="receipt-page">
         <div className="empty-state">
           <span className="empty-icon">🧾</span>
@@ -42,6 +43,7 @@ export default function Receipt() {
           <p>{error}</p>
           <Link to={backLink} className="btn btn-primary">{backLabel}</Link>
         </div>
+      </div>
       </div>
     );
   }
@@ -53,6 +55,7 @@ export default function Receipt() {
   const receiptNumber = `TC-${String(receipt.order_id).padStart(6, '0')}`;
 
   return (
+    <div className="dashboard-main-standalone">
     <div className="receipt-page" id="receipt-page">
       {/* Action bar - hidden on print */}
       <div className="receipt-actions no-print">
@@ -178,6 +181,7 @@ export default function Receipt() {
           <p className="receipt-footer-generated">Generated on {new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
         </div>
       </div>
+    </div>
     </div>
   );
 }

@@ -120,7 +120,8 @@ export default function Cart() {
   const someSelected = selectedIds.size > 0 && selectedIds.size < items.length;
 
   return (
-    <div className="cart-page" id="cart-page">
+    <div className="dashboard-main-standalone" id="cart-page">
+      <div className="cart-page">
       <div className="page-header">
         <h1>Shopping Cart</h1>
         <p>{items.length} item{items.length !== 1 ? 's' : ''} in your cart</p>
@@ -218,6 +219,7 @@ export default function Cart() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

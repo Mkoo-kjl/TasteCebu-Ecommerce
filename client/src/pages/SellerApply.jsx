@@ -105,6 +105,7 @@ export default function SellerApply() {
     if (!config) return <div className="loading-screen"><div className="spinner"></div></div>;
 
     return (
+      <div className="dashboard-main-standalone">
       <div className="seller-apply-page" id="seller-apply-page">
         <div className="status-card card" style={{ borderColor: config.color }}>
           <div className="status-icon" style={{ color: config.color }}>{config.icon}</div>
@@ -116,11 +117,13 @@ export default function SellerApply() {
           )}
         </div>
       </div>
+      </div>
     );
   }
 
   if (!subscriptionPaid) {
     return (
+      <div className="dashboard-main-standalone">
       <div className="seller-apply-page" id="seller-apply-page">
         <div className="page-header">
           <h1>Seller Subscriptions</h1>
@@ -204,10 +207,12 @@ export default function SellerApply() {
           </button>
         </div>
       </div>
+      </div>
     );
   }
 
   return (
+    <div className="dashboard-main-standalone">
     <div className="seller-apply-page" id="seller-apply-page">
       <div className="page-header">
         <h1>Become a Seller</h1>
@@ -262,6 +267,7 @@ export default function SellerApply() {
           <FiSend size={16} /> {submitting ? 'Submitting...' : 'Submit Application'}
         </button>
       </form>
+    </div>
     </div>
   );
 }

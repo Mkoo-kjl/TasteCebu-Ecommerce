@@ -171,7 +171,8 @@ export default function ProductDetail() {
   const canAddToCart = !user || user.role === 'user';
 
   return (
-    <div className="product-detail-page" id="product-detail-page">
+    <div className="dashboard-main-standalone" id="product-detail-page">
+      <div className="product-detail-page">
       <button className="back-btn" onClick={() => navigate('/products')}>
         <FiArrowLeft size={18} /> Back to Products
       </button>
@@ -363,6 +364,7 @@ export default function ProductDetail() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

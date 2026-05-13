@@ -7,9 +7,7 @@
 
 .main-content {
   flex: 1;
-  max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
   padding: 24px 20px 60px;
 }
 
@@ -467,8 +465,6 @@
 
 .dashboard-main-standalone {
   padding: 32px 40px 40px;
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -723,8 +719,7 @@
 
 /* â•â•â•â•â•â•â• LANDING PAGE â€” FULL REDESIGN â•â•â•â•â•â•â• */
 .landing-page {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
+  width: 100%;
   margin-top: -24px;
   overflow: hidden;
 }
