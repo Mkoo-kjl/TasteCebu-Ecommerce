@@ -14,6 +14,13 @@
   margin-left: 0;
 }
 
+/* Flex row container for sidebar + main content */
+.dashboard-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
 .main-content {
   flex: 1;
   width: 100%;
@@ -23,9 +30,9 @@
 .main-content.dashboard-mode {
   max-width: none;
   margin: 0;
-  margin-left: 260px;
   padding: 0;
-  width: calc(100% - 260px);
+  flex: 1;
+  min-width: 0;
 }
 
 .footer {
@@ -330,19 +337,20 @@
 
 .dashboard-sidebar {
   width: 260px;
-  height: calc(100vh - 104px);
+  min-width: 260px;
+  height: calc(100vh - 72px);
   background: #ffffff;
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  position: fixed;
-  left: 0;
-  top: 104px;
+  position: sticky;
+  top: 72px;
   z-index: 99;
   box-shadow: 2px 0 20px rgba(28, 16, 9, 0.04);
   overflow-y: auto;
   overflow-x: hidden;
   transition: none;
+  align-self: flex-start;
 }
 
 /* Sidebar overlay — only used on mobile */
@@ -5822,12 +5830,15 @@ html {
 
   /* Hide sidebar off-screen on mobile */
   .dashboard-sidebar {
+    position: fixed;
     top: 0;
+    left: 0;
     height: 100vh;
     z-index: 1001;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s;
     box-shadow: none;
+    align-self: auto;
   }
 
   .dashboard-sidebar.mobile-open {
@@ -5835,17 +5846,11 @@ html {
     box-shadow: 8px 0 30px rgba(0, 0, 0, 0.2);
   }
 
-  /* Remove sidebar offset on mobile */
-  .app-wrapper.has-sidebar .navbar-with-sidebar {
-    margin-left: 0;
-  }
-
-  .app-wrapper.has-sidebar .top-banner {
-    margin-left: 0;
+  .dashboard-layout {
+    flex-direction: column;
   }
 
   .main-content.dashboard-mode {
-    margin-left: 0;
     width: 100%;
   }
 }

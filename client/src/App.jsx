@@ -58,29 +58,43 @@ function App() {
         style: { borderRadius: '12px', background: 'var(--card-bg)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' },
       }} />
       <Navbar />
-      {isDashboardPage && <CustomerSidebar activeTab={getActiveTab()} />}
-      <main className={`main-content ${isDashboardPage ? 'dashboard-mode' : ''}`}>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/seller/:id" element={<SellerProfile />} />
-          <Route path="/messages" element={<ProtectedRoute roles={['user', 'seller', 'admin']}><Messages /></ProtectedRoute>} />
-          <Route path="/cart" element={<ProtectedRoute roles={['user']}><Cart /></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute roles={['user']}><Orders /></ProtectedRoute>} />
-          <Route path="/orders/:id/receipt" element={<ProtectedRoute roles={['user', 'seller']}><Receipt /></ProtectedRoute>} />
-          <Route path="/home" element={<ProtectedRoute roles={['user']}><UserDashboard /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute roles={['user', 'seller', 'admin']}><Profile /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute roles={['user', 'seller', 'admin']}><Settings /></ProtectedRoute>} />
-          <Route path="/seller/apply" element={<ProtectedRoute><SellerApply /></ProtectedRoute>} />
-          <Route path="/seller/dashboard" element={<ProtectedRoute roles={['seller', 'admin']}><SellerDashboard /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-        </Routes>
-      </main>
-      {!isDashboardPage && !isAuthPage && <Footer />}
+      {isDashboardPage ? (
+        <div className="dashboard-layout">
+          <CustomerSidebar activeTab={getActiveTab()} />
+          <main className="main-content dashboard-mode">
+            <Routes>
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="/seller/:id" element={<SellerProfile />} />
+              <Route path="/messages" element={<ProtectedRoute roles={['user', 'seller', 'admin']}><Messages /></ProtectedRoute>} />
+              <Route path="/cart" element={<ProtectedRoute roles={['user']}><Cart /></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute roles={['user']}><Orders /></ProtectedRoute>} />
+              <Route path="/orders/:id/receipt" element={<ProtectedRoute roles={['user', 'seller']}><Receipt /></ProtectedRoute>} />
+              <Route path="/home" element={<ProtectedRoute roles={['user']}><UserDashboard /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute roles={['user', 'seller', 'admin']}><Profile /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute roles={['user', 'seller', 'admin']}><Settings /></ProtectedRoute>} />
+              <Route path="/seller/apply" element={<ProtectedRoute><SellerApply /></ProtectedRoute>} />
+              <Route path="/seller/dashboard" element={<ProtectedRoute roles={['seller', 'admin']}><SellerDashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+            </Routes>
+          </main>
+        </div>
+      ) : (
+        <>
+          <main className="main-content">
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="/seller/:id" element={<SellerProfile />} />
+            </Routes>
+          </main>
+          {!isAuthPage && <Footer />}
+        </>
+      )}
     </div>
   );
 }
