@@ -359,7 +359,7 @@ export default function Landing() {
             <div className="lp-seller-badge">
               <FiZap /> BECOME A SELLER
             </div>
-            <h2>Share Your Craft<br />With the <span className="lp-title-accent">World</span></h2>
+            <h2>Share Your Product<br />With the <span className="lp-title-accent">World</span></h2>
             <p>
               Join our growing community of Cebuano artisan makers.
               We provide the platform, you provide the passion.
