@@ -317,12 +317,6 @@
 }
 
 /* ========== CUSTOMER DASHBOARD LAYOUT ========== */
-.dashboard-layout {
-  display: flex;
-  min-height: 100vh;
-  background: var(--bg-primary);
-  position: relative;
-}
 
 .dashboard-sidebar {
   width: 260px;
@@ -5593,7 +5587,7 @@
 /* â•â•â•â•â•â•â• DASHBOARD SIDEBAR LAYOUT â•â•â•â•â•â•â• */
 .dashboard-layout {
   display: flex;
-  min-height: calc(100vh - 72px);
+  min-height: auto;
   max-width: 100vw;
   width: 100vw;
   margin-left: calc(50% - 50vw);
