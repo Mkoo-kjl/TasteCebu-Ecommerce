@@ -52,13 +52,13 @@ function App() {
   };
 
   return (
-    <div className="app-wrapper">
+    <div className={`app-wrapper ${isDashboardPage ? 'has-sidebar' : ''}`}>
       <Toaster position="top-right" toastOptions={{
         duration: 3000,
         style: { borderRadius: '12px', background: 'var(--card-bg)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' },
       }} />
       <Navbar />
-      {user && <CustomerSidebar activeTab={getActiveTab()} />}
+      {isDashboardPage && <CustomerSidebar activeTab={getActiveTab()} />}
       <main className={`main-content ${isDashboardPage ? 'dashboard-mode' : ''}`}>
         <Routes>
           <Route path="/" element={<Landing />} />

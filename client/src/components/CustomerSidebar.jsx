@@ -12,25 +12,26 @@ import {
   TbUsers,
   TbFileText,
   TbBuildingStore,
-  TbChartBar
+  TbChartBar,
+  TbX
 } from 'react-icons/tb';
 import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 
 export default function CustomerSidebar({ activeTab }) {
   const { user, logout } = useAuth();
-  const { sidebarOpen, closeSidebar } = useSidebar();
+  const { mobileSidebarOpen, closeMobileSidebar } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
-    closeSidebar();
+    closeMobileSidebar();
   };
 
   const handleNavClick = (route) => {
     navigate(route);
-    closeSidebar();
+    closeMobileSidebar();
   };
 
   const getMenuItems = () => {
@@ -74,12 +75,18 @@ export default function CustomerSidebar({ activeTab }) {
 
   return (
     <>
+      {/* Mobile overlay - only visible on small screens */}
       <div 
-        className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`} 
-        onClick={closeSidebar} 
+        className={`sidebar-overlay ${mobileSidebarOpen ? 'active' : ''}`} 
+        onClick={closeMobileSidebar} 
       />
 
-      <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <aside className={`dashboard-sidebar ${mobileSidebarOpen ? 'mobile-open' : ''}`}>
+        {/* Mobile close button */}
+        <button className="sidebar-mobile-close" onClick={closeMobileSidebar} aria-label="Close sidebar">
+          <TbX size={20} />
+        </button>
+
         <div className="sidebar-header">
           <div className="sidebar-brand-expanded">
             <img src={brandIcon} alt="TasteCebu" className="brand-logo-img" />

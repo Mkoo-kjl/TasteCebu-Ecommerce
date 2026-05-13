@@ -3,12 +3,13 @@ import { createContext, useContext, useState } from 'react';
 const SidebarContext = createContext();
 
 export function SidebarProvider({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const toggleSidebar = () => setSidebarOpen(prev => !prev);
-  const closeSidebar = () => setSidebarOpen(false);
+  // Mobile-only: sidebar is always visible on desktop, toggled on mobile
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const toggleMobileSidebar = () => setMobileSidebarOpen(prev => !prev);
+  const closeMobileSidebar = () => setMobileSidebarOpen(false);
 
   return (
-    <SidebarContext.Provider value={{ sidebarOpen, toggleSidebar, closeSidebar }}>
+    <SidebarContext.Provider value={{ mobileSidebarOpen, toggleMobileSidebar, closeMobileSidebar }}>
       {children}
     </SidebarContext.Provider>
   );

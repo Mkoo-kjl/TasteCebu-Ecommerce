@@ -10,7 +10,7 @@ import brandIcon from '../assets/Pictures/tastecebuicon.jpg';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { toggleSidebar } = useSidebar();
+  const { toggleMobileSidebar } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -95,11 +95,12 @@ export default function Navbar() {
           <span>🚚 Free Shipping on orders over ₱500</span>
         </div>
       </div>
-      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} id="main-navbar">
+      <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${isDashboardPage ? 'navbar-with-sidebar' : ''}`} id="main-navbar">
         <div className="navbar-container">
           <div className="navbar-brand-group">
+            {/* Mobile-only sidebar toggle */}
             {isDashboardPage && (
-              <button className="navbar-sidebar-toggle" onClick={toggleSidebar} aria-label="Toggle sidebar menu" id="sidebar-toggle-btn">
+              <button className="navbar-mobile-sidebar-toggle" onClick={toggleMobileSidebar} aria-label="Toggle sidebar menu" id="sidebar-toggle-btn">
                 <FiMenu size={22} />
               </button>
             )}
