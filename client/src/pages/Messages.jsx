@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { FiSend, FiMessageSquare, FiArrowLeft, FiSearch, FiCheck, FiCheckCircle } from 'react-icons/fi';
+import { FiSend, FiMessageSquare, FiArrowLeft, FiSearch, FiCheck, FiCheckCircle, FiTrash2 } from 'react-icons/fi';
 
 
 export default function Messages() {
@@ -19,6 +19,8 @@ export default function Messages() {
   const [chatLoading, setChatLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const messagesEndRef = useRef(null);
   const pollRef = useRef(null);
 
@@ -132,6 +134,33 @@ export default function Messages() {
     setSearchParams({});
   };
 
+  const confirmDelete = (e, conv) => {
+    e.stopPropagation();
+    setDeleteTarget(conv);
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/messages/conversations/${deleteTarget.id}`);
+      setConversations(prev => prev.filter(c => c.id !== deleteTarget.id));
+      if (activeConversation === deleteTarget.id) {
+        setActiveConversation(null);
+        setMessages([]);
+        setOtherUser(null);
+        setMobileShowChat(false);
+        setSearchParams({});
+      }
+      toast.success('Conversation deleted');
+    } catch {
+      toast.error('Failed to delete conversation');
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
+
   const filteredConversations = conversations.filter(c => {
     if (!searchTerm.trim()) return true;
     const name = (c.business_name || c.other_name || '').toLowerCase();
@@ -236,6 +265,14 @@ export default function Messages() {
                       )}
                     </div>
                   </div>
+                  <button
+                    className="conv-delete-btn"
+                    onClick={(e) => confirmDelete(e, conv)}
+                    title="Delete conversation"
+                    id={`delete-conv-${conv.id}`}
+                  >
+                    <FiTrash2 size={14} />
+                  </button>
                 </div>
               ))
             )}
@@ -334,6 +371,40 @@ export default function Messages() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="delete-conv-overlay" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="delete-conv-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-conv-modal-icon">
+              <FiTrash2 size={28} />
+            </div>
+            <h3>Delete Conversation</h3>
+            <p>
+              Delete your conversation with <strong>{deleteTarget.business_name || deleteTarget.other_name}</strong>?
+              This will hide it from your inbox. It will reappear if new messages are sent.
+            </p>
+            <div className="delete-conv-modal-actions">
+              <button
+                className="delete-conv-cancel-btn"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                id="cancel-delete-conv"
+              >
+                Cancel
+              </button>
+              <button
+                className="delete-conv-confirm-btn"
+                onClick={handleDeleteConversation}
+                disabled={deleting}
+                id="confirm-delete-conv"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   </div>
   );

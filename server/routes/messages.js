@@ -22,9 +22,11 @@ router.get('/conversations', requireAuth, async (req, res) => {
       JOIN users cu ON c.customer_id = cu.id
       JOIN users s ON c.seller_id = s.id
       LEFT JOIN seller_applications sa ON c.seller_id = sa.user_id AND sa.status = 'approved'
-      WHERE c.customer_id = ? OR c.seller_id = ?
+      WHERE (c.customer_id = ? OR c.seller_id = ?)
+        AND NOT (c.customer_id = ? AND c.deleted_by_customer = 1)
+        AND NOT (c.seller_id = ? AND c.deleted_by_seller = 1)
       ORDER BY c.last_message_at DESC
-    `, [userId, userId, userId, userId, userId, userId, userId, userId]);
+    `, [userId, userId, userId, userId, userId, userId, userId, userId, userId, userId]);
 
     res.json({ conversations });
   } catch (err) {
@@ -63,6 +65,11 @@ router.post('/conversations', requireAuth, async (req, res) => {
     );
 
     if (existing.length > 0) {
+      // Restore if soft-deleted by this user
+      await db.query(
+        'UPDATE conversations SET deleted_by_customer = 0, deleted_by_seller = 0 WHERE id = ?',
+        [existing[0].id]
+      );
       return res.json({ conversation_id: existing[0].id });
     }
 
@@ -155,9 +162,9 @@ router.post('/conversations/:id', requireAuth, async (req, res) => {
       [conversationId, userId, content.trim()]
     );
 
-    // Update last_message_at
+    // Update last_message_at and clear soft-delete flags so both users see the conversation
     await db.query(
-      'UPDATE conversations SET last_message_at = NOW() WHERE id = ?',
+      'UPDATE conversations SET last_message_at = NOW(), deleted_by_customer = 0, deleted_by_seller = 0 WHERE id = ?',
       [conversationId]
     );
 
@@ -220,6 +227,37 @@ router.get('/unread-count', requireAuth, async (req, res) => {
     res.json({ unread_count: count });
   } catch (err) {
     console.error('Unread count error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// DELETE /api/messages/conversations/:id - Soft-delete a conversation for the current user
+router.delete('/conversations/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const conversationId = req.params.id;
+
+    // Verify user is part of this conversation
+    const [conv] = await db.query(
+      'SELECT * FROM conversations WHERE id = ? AND (customer_id = ? OR seller_id = ?)',
+      [conversationId, userId, userId]
+    );
+    if (conv.length === 0) {
+      return res.status(404).json({ message: 'Conversation not found.' });
+    }
+
+    // Determine which flag to set based on the user's role in this conversation
+    const isCustomer = conv[0].customer_id === userId;
+    const column = isCustomer ? 'deleted_by_customer' : 'deleted_by_seller';
+
+    await db.query(
+      `UPDATE conversations SET ${column} = 1 WHERE id = ?`,
+      [conversationId]
+    );
+
+    res.json({ message: 'Conversation deleted.' });
+  } catch (err) {
+    console.error('Delete conversation error:', err);
     res.status(500).json({ message: 'Server error.' });
   }
 });

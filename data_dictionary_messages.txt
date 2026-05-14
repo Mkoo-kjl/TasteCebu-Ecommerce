@@ -1,0 +1,137 @@
+================================================================================
+                    TASTECEBU - MESSAGING SYSTEM DATA DICTIONARY
+================================================================================
+  Date Created : May 14, 2026
+  Database     : tastecebu (MySQL / MariaDB)
+  Schema Files : schema_update_v3.sql, schema_update_v4.sql
+================================================================================
+
+
+TABLE: conversations
+--------------------------------------------------------------------------------
+Description : Stores one conversation per unique customer-seller pair.
+              Supports soft-delete so each participant can independently
+              hide a conversation from their inbox.
+Engine      : InnoDB
+Charset     : utf8mb4
+--------------------------------------------------------------------------------
+
+  Column                | Data Type       | Constraints / Default            | Description
+  ----------------------|-----------------|----------------------------------|---------------------------------------------
+  id                    | INT             | PRIMARY KEY, AUTO_INCREMENT      | Unique conversation identifier.
+  customer_id           | INT             | NOT NULL, FK -> users(id)        | The customer (buyer) in the conversation.
+                        |                 | ON DELETE CASCADE                |
+  seller_id             | INT             | NOT NULL, FK -> users(id)        | The seller in the conversation.
+                        |                 | ON DELETE CASCADE                |
+  last_message_at       | TIMESTAMP       | DEFAULT CURRENT_TIMESTAMP        | Timestamp of the most recent message.
+                        |                 |                                  | Updated each time a message is sent.
+  deleted_by_customer   | TINYINT(1)      | DEFAULT 0                        | Soft-delete flag for the customer.
+                        |                 |                                  | 0 = visible, 1 = hidden from customer.
+  deleted_by_seller     | TINYINT(1)      | DEFAULT 0                        | Soft-delete flag for the seller.
+                        |                 |                                  | 0 = visible, 1 = hidden from seller.
+  created_at            | TIMESTAMP       | DEFAULT CURRENT_TIMESTAMP        | Timestamp when the conversation was created.
+
+  UNIQUE KEY: unique_conversation (customer_id, seller_id)
+    - Ensures only one conversation exists per customer-seller pair.
+
+  FOREIGN KEYS:
+    - customer_id -> users(id) ON DELETE CASCADE
+    - seller_id   -> users(id) ON DELETE CASCADE
+
+  INDEXES:
+    - PRIMARY KEY on id
+    - UNIQUE KEY on (customer_id, seller_id)
+
+
+TABLE: messages
+--------------------------------------------------------------------------------
+Description : Stores individual chat messages within a conversation.
+              Automatically deleted when the parent conversation is removed
+              (via CASCADE).
+Engine      : InnoDB
+Charset     : utf8mb4
+--------------------------------------------------------------------------------
+
+  Column                | Data Type       | Constraints / Default            | Description
+  ----------------------|-----------------|----------------------------------|---------------------------------------------
+  id                    | INT             | PRIMARY KEY, AUTO_INCREMENT      | Unique message identifier.
+  conversation_id       | INT             | NOT NULL, FK -> conversations(id)| The conversation this message belongs to.
+                        |                 | ON DELETE CASCADE                |
+  sender_id             | INT             | NOT NULL, FK -> users(id)        | The user who sent the message.
+                        |                 | ON DELETE CASCADE                |
+  content               | TEXT            | NOT NULL                         | The text body of the message.
+  is_read               | TINYINT(1)      | DEFAULT 0                        | Read receipt flag.
+                        |                 |                                  | 0 = unread, 1 = read by recipient.
+  created_at            | TIMESTAMP       | DEFAULT CURRENT_TIMESTAMP        | Timestamp when the message was sent.
+
+  FOREIGN KEYS:
+    - conversation_id -> conversations(id) ON DELETE CASCADE
+    - sender_id       -> users(id)         ON DELETE CASCADE
+
+  INDEXES:
+    - PRIMARY KEY on id
+
+
+================================================================================
+                           RELATIONSHIP DIAGRAM
+================================================================================
+
+  users (id)
+    |
+    |--- 1:N ---> conversations.customer_id
+    |--- 1:N ---> conversations.seller_id
+    |--- 1:N ---> messages.sender_id
+    
+  conversations (id)
+    |
+    |--- 1:N ---> messages.conversation_id
+
+
+================================================================================
+                              API ENDPOINTS
+================================================================================
+
+  Method   | Route                                | Description
+  ---------|--------------------------------------|--------------------------------------
+  GET      | /api/messages/conversations          | List all conversations for the
+           |                                      | authenticated user (excludes
+           |                                      | soft-deleted ones).
+  POST     | /api/messages/conversations          | Start a new conversation or retrieve
+           |                                      | an existing one. Restores soft-
+           |                                      | deleted conversations automatically.
+  GET      | /api/messages/conversations/:id      | Get all messages for a conversation.
+           |                                      | Returns messages and other user info.
+  POST     | /api/messages/conversations/:id      | Send a message in a conversation.
+           |                                      | Clears soft-delete flags for both
+           |                                      | participants so new activity is
+           |                                      | visible to everyone.
+  PUT      | /api/messages/conversations/:id/read | Mark all messages from the other
+           |                                      | user as read.
+  DELETE   | /api/messages/conversations/:id      | Soft-delete a conversation for the
+           |                                      | authenticated user only. The other
+           |                                      | participant is unaffected.
+  GET      | /api/messages/unread-count           | Get total unread message count
+           |                                      | across all conversations.
+
+
+================================================================================
+                          SOFT-DELETE BEHAVIOR
+================================================================================
+
+  1. When a user deletes a conversation, only their corresponding flag is set:
+     - Customer deletes -> deleted_by_customer = 1
+     - Seller deletes   -> deleted_by_seller = 1
+
+  2. The conversation is hidden from the user's inbox but NOT removed from
+     the database. The other participant still sees it.
+
+  3. If either participant sends a new message, BOTH flags are cleared
+     (deleted_by_customer = 0, deleted_by_seller = 0), making the
+     conversation visible to both users again.
+
+  4. Re-initiating a conversation (POST /conversations) also clears both
+     soft-delete flags.
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================
